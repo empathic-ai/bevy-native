@@ -1,3 +1,3 @@
 # 🏠 Bevy Native
 
-Render native user interfaces whilst simultaneously using Bevy ECS for applicaiton logic.
+Render native user interfaces whilst using Bevy ECS for applicaiton logic.
