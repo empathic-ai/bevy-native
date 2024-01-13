@@ -1,6 +1,6 @@
 # 🏠 Bevy Native
 
-Use Bevy to render native user interfaces and handle applicaiton logic.
+Use Bevy to render native user interfaces & handle applicaiton logic.
 
 Platform | Support |
 --- | --- | 
