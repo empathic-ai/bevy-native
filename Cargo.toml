@@ -1,0 +1,9 @@
+[package]
+name = "bevy_native"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { version = "0.11.0" }
+bevy_builder = { git = "https://github.com/empathic-ai/bevy-builder.git" }
+common = { git = "https://github.com/empathic-ai/common.git" }
