@@ -1,43 +1,45 @@
-use crate::prelude::*;
-use bevy_builder::*;
+mod routing;
+pub use routing::*;
 
-use super::{elements, ClickEvent, SubmitEvent, OnClick, BindableChanged, OnShow};
+mod main_js;
+
+use bevy_builder::prelude::*;
+
 use bevy::utils::HashMap;
 
 use bevy::hierarchy::HierarchyEvent;
-use bevy::prelude::{Changed, Children, Color, Commands, Entity, Parent, Query, RemovedComponents, EventReader, Without, Vec4};
-use bevy::ui::BackgroundColor;
+use bevy::prelude::*;
 
 use bevy::ecs::event::{Event, EventWriter};
 
 use wasm_bindgen::{prelude::*, JsCast};
 
-use std::sync::{Mutex, mpsc};
-
-use web_sys::{Document, Element, HtmlIFrameElement, HtmlInputElement, Window, window, UrlSearchParams};
-use url::Url;
-
-use elements::{Button, Label};
+use web_sys::{Document, Element, HtmlIFrameElement, HtmlInputElement, Window};
 
 use lazy_static::lazy_static;
-use std::sync::mpsc::{Receiver, Sender};
 
 use web_sys::HtmlDivElement;
-
+use std::sync::mpsc::Receiver;
+use std::sync::Mutex;
+use std::sync::mpsc::Sender;
 use base64::{engine::general_purpose, Engine as _};
+
+use web_sys::js_sys;
+use common::prelude::*;
 
 lazy_static! {
     pub static ref ROUTE_CHANNEL: Mutex<(Sender<RouteChange>, Receiver<RouteChange>)> = {
-        let (tx, rx) = mpsc::channel();
+        let (tx, rx) = std::sync::mpsc::channel();
         Mutex::new((tx, rx))
     };
 }
 
 #[derive(Default, Event)]
-pub struct TranscribeEvent(pub String);
+pub struct RouteChange {
+    pub path: Vec<String>,
+    pub params: HashMap<String, String>
+}
 
-#[derive(Default, Event)]
-pub struct ResponseEvent(pub String);
 
 pub fn setup() {
     let window = web_sys::window().expect("no global `window` exists");
@@ -86,9 +88,9 @@ pub fn iframe_change_detection(
 ) {
 }
 
-pub fn label_change_detection(
+pub fn BLabel_change_detection(
     _commands: Commands,
-    _query: Query<(Entity, &Control, &Label, Changed<Label>)>,
+    _query: Query<(Entity, &Control, &BLabel, Changed<BLabel>)>,
 ) {
 }
 
@@ -272,14 +274,14 @@ pub fn base_change_detection(
         Option<&VScroll>,
         Option<&BackgroundColor>,
         Option<&ImageRect>,
-        Option<&Label>,
+        Option<&BLabel>,
         Option<&InputField>,
         Option<&Shadow>,
         Option<&Button>,
         Option<Changed<Control>>,
         Option<Changed<Parent>>,
         Option<Changed<ImageRect>>,
-        Option<Changed<Label>>,
+        Option<Changed<BLabel>>,
         Option<Changed<InputField>>,
     )>,
     parent_container_query: Query<(&Container, Option<&VList>, Option<&HList>)>,
@@ -291,14 +293,14 @@ pub fn base_change_detection(
         vscroll,
         background_color,
         image_rect,
-        label,
+        BLabel,
         input_field,
         shadow,
         button,
         changed_control,
         changed_parent,
         changed_image_rect,
-        changed_label,
+        changed_BLabel,
         changed_input_field,
     ) in &query
     {
@@ -310,7 +312,7 @@ pub fn base_change_detection(
         if changed_control.is_some_and(|x| x)
             || changed_parent.is_some_and(|x| x)
             || changed_image_rect.is_some_and(|x| x)
-            || changed_label.is_some_and(|x| x)
+            || changed_BLabel.is_some_and(|x| x)
             || changed_input_field.is_some_and(|x| x)
         {
             // Used for debugging
@@ -318,10 +320,10 @@ pub fn base_change_detection(
             let id = entity.to_bits().to_string();
             let was_control_changed = changed_control.is_some_and(|x| x);
             let was_parent_changed = changed_parent.is_some_and(|x| x);
-            let was_label_changed = changed_label.is_some_and(|x| x);
+            let was_BLabel_changed = changed_BLabel.is_some_and(|x| x);
             let was_input_changed = changed_input_field.is_some_and(|x| x);
 
-            console::log!(format!("CHANGED ENTITY: {id}.\nCONTROL CHANGED: {was_control_changed}.\nPARENT CHANGED: {was_parent_changed}.\nLABEL CHANGED: {was_label_changed}.\nINPUT CHANGED: {was_input_changed}"));
+            console::log!(format!("CHANGED ENTITY: {id}.\nCONTROL CHANGED: {was_control_changed}.\nPARENT CHANGED: {was_parent_changed}.\nBLabel CHANGED: {was_BLabel_changed}.\nINPUT CHANGED: {was_input_changed}"));
             */
 
             let mut is_number = false;
@@ -589,21 +591,21 @@ pub fn base_change_detection(
                 format!("{top}px {right}px {bottom}px {left}px"),
             );
 
-            if let Some(label) = label {
+            if let Some(BLabel) = BLabel {
                 element_type = "p".to_string();
-                text_content = label.text.to_string();
+                text_content = BLabel.text.to_string();
                 //style_dictionary.insert("overflow".to_string(), "unset".to_string());
-                style_dictionary.insert("font-family".to_string(), label.font.clone());
+                style_dictionary.insert("font-family".to_string(), BLabel.font.clone());
 
-                style_dictionary.insert("font-size".to_string(), label.font_size.to_string() + "px");
-                style_dictionary.insert("color".to_string(), get_css_string(label.color));
+                style_dictionary.insert("font-size".to_string(), BLabel.font_size.to_string() + "px");
+                style_dictionary.insert("color".to_string(), get_css_string(BLabel.color));
                 
-                if label.is_shadow {
+                if BLabel.is_shadow {
                     style_dictionary.insert("text-shadow".to_string(), "2px 2px 15px rgba(0,0,0,.4)".to_string());
                 }                
 
                 let alignment: String;
-                match label.alignment {
+                match BLabel.alignment {
                     Anchor::UpperLeft | Anchor::MiddleLeft | Anchor::LowerLeft => {
                         alignment = "left".to_string()
                     }
@@ -621,42 +623,42 @@ pub fn base_change_detection(
                 use_pointer = true;
 
                 // Margin override for evil fonts
-                if label.font == "Mogra".to_string() {
-                    let offset = 0.0;//label.FontSize / 6.0;
+                if BLabel.font == "Mogra".to_string() {
+                    let offset = 0.0;//BLabel.FontSize / 6.0;
                     style_dictionary.insert("margin".to_string(), format!("0px 0px -{offset}px 0px").to_string());
                 } else {
                     style_dictionary.insert("margin".to_string(), 0.to_string());
                 }
 
-                if label.is_single_line && !control.ExpandWidth {
+                if BLabel.is_single_line && !control.ExpandWidth {
                     style_dictionary.insert("box-sizing".to_string(), "content-box".to_string());
                     style_dictionary.insert("word-break".to_string(), "normal".to_string());
                     style_dictionary.insert("width".to_string(), "max-content".to_string());
                     style_dictionary.insert("flex-shrink".to_string(), "0".to_string());
                 }
 
-                if label.is_italic {
+                if BLabel.is_italic {
                     style_dictionary.insert("font-style".to_string(), "italic".to_string());
                 }
-                if label.is_bold {
+                if BLabel.is_bold {
                     style_dictionary.insert("font-weight".to_string(), "bold".to_string());
                 } else {
-                    let font_weight = label.font_weight;
+                    let font_weight = BLabel.font_weight;
                     style_dictionary.insert("font-weight".to_string(), format!("{font_weight}").to_string());
                 }
 
-                if label.is_3d {
+                if BLabel.is_3d {
                     let color = "#aeaeae";
 
                     let mut depth_string = "".to_string();
-                    let depth = (label.font_size / 5.0) as i32;
+                    let depth = (BLabel.font_size / 5.0) as i32;
                     for i in 0..depth {
                         let depth_val = i + 1;
                         depth_string += &format!("0px {depth_val}px 0px {color}, ");
                     }
 
                     let mut stroke_string = "".to_string();
-                    //let depth = (label.font_size / 5.0) as i32;
+                    //let depth = (BLabel.font_size / 5.0) as i32;
                     let max_depth = depth+10;
                     //stroke_string += &format!("10px {max_depth}px 0 #000, -10px {max_depth}px 0 #000, -10px -10px 0 #000, 10px -10px 0 #000");
                     
@@ -670,7 +672,7 @@ pub fn base_change_detection(
                     style_dictionary.insert("transform".to_string(), "perspective(1000px) rotateX(25deg)".to_string());
                 }
 
-                if let Some(line_height) = label.line_height {
+                if let Some(line_height) = BLabel.line_height {
                     style_dictionary.insert("line-height".to_string(), format!("{line_height}px").to_string());
                 }
             }
@@ -728,7 +730,7 @@ pub fn base_change_detection(
             let element = add_or_get_element(entity, Some(element_type));
 
             if is_number {
-                crate::prelude::main_js::phoneNumber(element.clone());
+                unsafe { main_js::phoneNumber(element.clone()); };
             }
 
             for (key, val) in attribute_dictionary {
@@ -737,7 +739,7 @@ pub fn base_change_detection(
 
             insert_style(&element, style_dictionary);
 
-            if label.is_some() {
+            if BLabel.is_some() {
                 element.set_inner_html(&text_content);
             }
 
@@ -830,12 +832,6 @@ pub fn is_extension() -> bool {
     .expect("Could not get window URL!");
 
     url.starts_with("chrome-extension://")
-}
-
-pub fn go_to_url(url: String) -> Result<(), JsValue> {
-    let window = window().ok_or_else(|| JsValue::from_str("No global `window` exists"))?;
-    let location = window.location();
-    location.assign(&url).map_err(|_| JsValue::from_str("Unable to navigate to the specified URL"))
 }
 
 pub async fn import_font(font_name: String, font_path: String) {
@@ -1034,105 +1030,6 @@ pub fn remove_detection(mut removals: RemovedComponents<Control>) {
     }
 }
 
-pub fn route_detection(
-    query: Query<(
-        Entity,
-        &Router,
-        &Children,
-        Changed<Router>,
-    )>,
-    mut route_query: Query<(
-        Entity,
-        &mut Control,
-        &Route
-    ), Without<Router>>
-) {
-    for (entity, router, children, router_changed) in &query {
-        if router_changed {
-            //let first_path = router.path[0].clone();
-            //console::log!(format!("ROUTER CHANGED"));
-
-            for child in children.iter() {
-                let mut is_path_part = true;
-                if let Ok(mut route) = route_query.get_component::<Route>(*child) {
-                    is_path_part = router.path.len() > 0 && (route.name == router.path[0]);
-                }
-                if let Ok(mut control) = route_query.get_component_mut::<Control>(*child) {
-                    control.IsVisible = is_path_part;
-                }
-            }
-        }
-    }
-}
-
-pub fn get_route() -> String {
-    let window = web_sys::window().expect("no global `window` exists");
-    let location = window.location();
-    let path = location.pathname().unwrap();
-
-    return path;
-}
-
-pub fn get_route_params() -> HashMap<String, String> {
-    let window = web_sys::window().expect("no global `window` exists");
-    let location = window.location();
-
-    let search = location.search().unwrap(); // This gets the part of the URL after the `?`
-    let params = UrlSearchParams::new_with_str(&search).unwrap();
-
-    let params = convert_to_dictionary(params);
-
-    return params;
-}
-
-pub fn convert_to_dictionary(search_params: UrlSearchParams) ->  HashMap<String, String> {
-    let mut dictionary: HashMap<String, String> = HashMap::new();
-
-    let iterator = js_sys::try_iter(&search_params).unwrap().unwrap();
-    for x in iterator {
-        let item = x.unwrap();
-        let key = unsafe { js_sys::Reflect::get(&item, &JsValue::from_str("0")).unwrap().as_string().unwrap() };
-        let value = unsafe { js_sys::Reflect::get(&item, &JsValue::from_str("1")).unwrap().as_string().unwrap() };
-        dictionary.insert(key, value);
-    }
-
-    dictionary
-}
-
-pub fn route() {
-    let route = get_route();
-
-    let (tx, rx) = &mut *ROUTE_CHANNEL.lock().unwrap();
-
-    //console::log!(format!("ROUTE CHANGE: {route}"));
-
-    let path_list = split_path_to_list(&route.trim_start_matches('/').trim_end_matches('/'));
-
-    tx.send(RouteChange{
-        path: path_list,
-        params: get_route_params()
-    });
-    /* 
-    let window = web_sys::window().expect("no global `window` exists");
-    let location = window.location();
-    let path = location.pathname().unwrap();
-
-    let search = location.search().unwrap(); // This gets the part of the URL after the `?`
-    let params = UrlSearchParams::new_with_str(&search).unwrap();
-
-    match path.as_str() {
-        "/login" => login(aws_client, params.get("code").unwrap()),
-        _ => home(),
-    }
-    */
-}
-
-fn split_path_to_list(path: &str) -> Vec<String> {
-    path.split('/')
-        .map(|s| s.to_string())
-        .collect()
-}
-
 pub fn on_show_detection(
     mut commands: Commands,
     mut query: Query<(
@@ -1166,7 +1063,7 @@ pub fn event_detection(
         //Option<&mut OnShow>,
         Option<&mut InteractState>,
         Option<&mut OnClick>,
-        Option<&mut elements::Button>,
+        Option<&mut BButton>,
         Option<&mut InputField>
     )>
 ) {
