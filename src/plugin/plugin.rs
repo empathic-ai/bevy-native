@@ -19,7 +19,7 @@ impl Plugin for SilkPlugin {
         .register_component_as::<dyn Bindable, SearchInput>()
         .add_plugins(bevy::MinimalPlugins)
         .add_plugin(bevy::hierarchy::HierarchyPlugin)
-        .insert_resource(bevy_builder::Bindings { ..default() } )
+        .insert_resource(bevy_builder::prelude::Bindings { ..default() } )
         //.insert_resource(client)
         .add_event::<RouteChange>()
         .add_event::<LogoutEvent>()
