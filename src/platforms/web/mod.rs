@@ -34,13 +34,6 @@ lazy_static! {
     };
 }
 
-#[derive(Default, Event)]
-pub struct RouteChange {
-    pub path: Vec<String>,
-    pub params: HashMap<String, String>
-}
-
-
 pub fn setup() {
     let window = web_sys::window().expect("no global `window` exists");
     let location = window.location();
