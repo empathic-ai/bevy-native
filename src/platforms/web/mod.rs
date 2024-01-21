@@ -27,6 +27,8 @@ use base64::{engine::general_purpose, Engine as _};
 use web_sys::js_sys;
 use common::prelude::*;
 
+use crate::*;
+
 lazy_static! {
     pub static ref ROUTE_CHANNEL: Mutex<(Sender<RouteChange>, Receiver<RouteChange>)> = {
         let (tx, rx) = std::sync::mpsc::channel();
@@ -140,8 +142,7 @@ pub fn list_change_detection(
                         style_dictionary.insert("align-items".to_string(), "center".to_string());
                     }
                     Anchor::MiddleLeft => {
-                        style_dictionary
-                            .insert("justify-content".to_string(), "safe center".to_string());
+                        style_dictionary.insert("justify-content".to_string(), "safe center".to_string());
                         style_dictionary.insert("align-content".to_string(), "start".to_string());
                         style_dictionary.insert("align-items".to_string(), "start".to_string());
                     }
@@ -200,9 +201,9 @@ pub fn list_change_detection(
                         style_dictionary.insert("align-items".to_string(), "start".to_string());
                     }
                     Anchor::MiddleLeft => {
-                        style_dictionary.insert("justify-content".to_string(), "end".to_string());
+                        style_dictionary.insert("justify-content".to_string(), "start".to_string());
                         style_dictionary.insert("align-content".to_string(), "start".to_string());
-                        style_dictionary.insert("align-items".to_string(), "start".to_string());
+                        style_dictionary.insert("align-items".to_string(), "center".to_string());
                     }
                     Anchor::MiddleRight => {
                         style_dictionary.insert("justify-content".to_string(), "end".to_string());
@@ -381,6 +382,7 @@ pub fn base_change_detection(
                 let _image_button = button.unwrap();
                 element_type = "button".to_string();
 
+                style_dictionary.insert("-webkit-tap-highlight-color".to_string(), "transparent".to_string());
                 style_dictionary.insert("background".to_string(), "none".to_string());
                 style_dictionary.insert("cursor".to_string(), "pointer".to_string());
                 use_pointer = true;
