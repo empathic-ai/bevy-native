@@ -1,5 +1,4 @@
 mod android;
-mod ios;
 mod linux;
 
 #[cfg(all(target_os = "windows"))]
@@ -11,3 +10,8 @@ pub use windows::*;
 mod web;
 #[cfg(all(target_arch = "wasm32"))]
 pub use web::*;
+
+#[cfg(all(target_os = "macos"))]
+mod ios;
+#[cfg(all(target_os = "macos"))]
+pub use ios::*;
