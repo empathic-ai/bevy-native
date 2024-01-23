@@ -32,15 +32,21 @@ impl Plugin for SilkPlugin {
         .add_event::<ClickEvent>()
         .add_event::<SubmitEvent>()
         .add_event::<SnapScrollY>()
+        .add_systems(PreUpdate,
+        (
+            update_route,
+            route_detection,
+            on_show_detection,
+        ).chain())
         .add_systems(Update,
             (
-                route_detection,
                 base_change_detection,
                 list_change_detection,
                 update_heirarchy,
                 //taby_client::network_detection,
-                update_route,
-                route_detection,
+                //update_route,
+                //route_detection,
+                //on_show_detection,
                 event_detection,
                 base_change_detection,
                 list_change_detection,
@@ -66,11 +72,7 @@ impl Plugin for SilkPlugin {
                 remove_detection
             ).chain()
         )
-        .add_systems(Update,
-            (
-                on_show_detection
-            ).chain()
-        )
+        .add_systems(PostStartup, route_detection)
         .add_startup_system(setup);
     }
 }
