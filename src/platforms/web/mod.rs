@@ -249,7 +249,7 @@ pub fn list_change_detection(
                 style_dictionary.insert("background".to_string(), "none".to_string());
             }
 
-            if !control.IsVisible {
+            if !control.is_visible {
                 style_dictionary.insert("display".to_string(), "none".to_string());
             }
 
@@ -298,9 +298,9 @@ pub fn base_change_detection(
         changed_input_field,
     ) in &query
     {
-        //if changed_control.is_some_and(|x| x) {
+        //if changed_control.is_some_and(|x| x) && control.is_visible {
         //    let id = entity.to_bits().to_string();
-        //    console::log!(format!("Control with ID {id} changed!"));
+        //    log(format!("Control with ID {id} is visible!"));
         //}
 
         if changed_control.is_some_and(|x| x)
@@ -702,7 +702,7 @@ pub fn base_change_detection(
                 //);
             }
 
-            if !control.IsVisible {
+            if !control.is_visible {
                 style_dictionary.insert("display".to_string(), "none".to_string());
             }
 
@@ -1034,10 +1034,12 @@ pub fn on_show_detection(
         Changed<Control>>
 ) {
     for (entity, mut control, mut on_show) in query.iter_mut() {
-        if control.IsVisible && !on_show.was_visible || !control.IsVisible && on_show.was_visible {
-            on_show.was_visible = control.IsVisible;
-            if control.IsVisible {
+        if control.is_visible && !on_show.was_visible || !control.is_visible && on_show.was_visible {
+            on_show.was_visible = control.is_visible;
+            if control.is_visible {
+                //log(format!("SHOWN: {}", entity.to_bits().to_string()));
                 //let c: &mut Commands<'_, '_> = &mut commands;
+                commands.entity(entity).insert(Shown{});
                 if let Some(func) = on_show.func.as_ref() {
                     func.call(&mut commands);
                 }

@@ -8,6 +8,7 @@ use bevy::prelude::*;
 
 use bevy::ecs::event::{Event, EventWriter};
 
+use common::prelude::*;
 use wasm_bindgen::{prelude::*, JsCast};
 
 use web_sys::*;
@@ -36,7 +37,10 @@ pub fn route_detection(
                     is_path_part = router.path.len() > 0 && (route.name == router.path[0]);
                 }
                 if let Ok(mut control) = route_query.get_component_mut::<Control>(*child) {
-                    control.IsVisible = is_path_part;
+                    control.is_visible = is_path_part;
+                    //if is_path_part {
+                        //log(format!("UPDATED {} TO VISIBLE", child.to_bits().to_string()));
+                    //}
                 }
             }
         }
