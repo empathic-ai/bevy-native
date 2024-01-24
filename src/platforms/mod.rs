@@ -1,6 +1,11 @@
 mod android;
 mod linux;
 
+#[cfg(all(target_os = "macos"))]
+mod ios;
+#[cfg(all(target_os = "macos"))]
+pub use ios::*;
+
 #[cfg(all(target_os = "windows"))]
 mod windows;
 #[cfg(all(target_os = "windows"))]
