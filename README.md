@@ -1,6 +1,6 @@
 # 🏠 Bevy Native
 
-**⚠️ Warning: Still in early development! ⚠️**
+**⚠️ Warning: Still in early development. ⚠️**
 
 Use Bevy to render native user interfaces. Write once and run everywhere.
 
