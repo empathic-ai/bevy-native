@@ -1,3 +1,6 @@
+#![allow(warnings)]
+#![allow(unused)]
+
 mod platforms;
 pub use platforms::*;
 
