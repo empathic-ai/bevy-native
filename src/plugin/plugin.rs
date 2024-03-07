@@ -7,9 +7,9 @@ use uuid::Uuid;
 
 use bevy_trait_query::RegisterExt;
 
-pub struct SilkPlugin;
+pub struct BevyNative;
 
-impl Plugin for SilkPlugin {
+impl Plugin for BevyNative {
     fn build(&self, app: &mut App) {
         app
         .register_component_as::<dyn BindableList, AutoBindableList>()

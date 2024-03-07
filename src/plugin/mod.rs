@@ -13,7 +13,7 @@ use bevy::prelude::*;
 use bevy_trait_query::RegisterExt;
 
 pub mod plugin;
-pub use plugin::SilkPlugin;
+pub use plugin::BevyNative;
 
 /*
 #[derive(Debug, Clone, Deserialize, Serialize)]
