@@ -34,7 +34,7 @@ pub struct Binding {
     pub target_property_name: String,
 }
 
-pub fn process_bindings<T>(_parent_query: Query<(Entity, &mut T, Changed<T>)>)
+pub fn process_bindings<T>(_parent_query: Query<(Entity, Ref<T>)>)
 where
     T: Component,
 {
@@ -50,6 +50,7 @@ pub struct Bindings {
     pub sources: HashMap<(Entity, usize), Binding>,
 }
 
+/*
 pub fn get_components_for_entity<'a>(
     entity: &Entity,
     archetypes: &'a Archetypes,
@@ -67,6 +68,7 @@ pub fn get_components_for_entity<'a>(
     }
     None
 }
+
 
 pub fn process(world: &mut World) {
     /*
@@ -132,3 +134,4 @@ pub fn process(world: &mut World) {
 
     //world.init_resource::<Binding>();
 }
+*/

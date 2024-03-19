@@ -4,10 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy-trait-query = { version = "0.3.0" }
+bevy-trait-query = { git = "https://github.com/RobWalt/bevy-trait-query.git", branch = "bevy-0.13" }
 uuid = { version = "1.2.2", default-features = false, features = ["macro-diagnostics"] }
 serde = { version = "1.0.149", features = ["derive"] }
-bevy = { version = "0.11.0", default-features = false, features = ["bevy_ui", "bevy_asset"] }
+bevy = { version = "0.13.0", default-features = false, features = ["bevy_ui", "bevy_asset"] }
 bevy_builder = { git = "https://github.com/empathic-ai/bevy-builder.git" }
 common = { git = "https://github.com/empathic-ai/common.git" }
 wasm-bindgen = "0.2"
