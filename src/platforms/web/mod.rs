@@ -79,13 +79,13 @@ pub fn create_iframe_element() -> Result<(), JsValue> {
 
 pub fn iframe_change_detection(
     _commands: Commands,
-    _query: Query<(Entity, &Control, &IFrame, Changed<IFrame>)>,
+    _query: Query<(Entity, &Control, Res<IFrame>)>,
 ) {
 }
 
 pub fn BLabel_change_detection(
     _commands: Commands,
-    _query: Query<(Entity, &Control, &BLabel, Changed<BLabel>)>,
+    _query: Query<(Entity, &Control, Res<BLabel>)>,
 ) {
 }
 
@@ -93,38 +93,30 @@ pub fn list_change_detection(
     _commands: Commands,
     query: Query<(
         Entity,
-        &Control,
+        Res<Control>,
         &Container,
-        Option<&VList>,
-        Option<&HList>,
-        Option<&GridList>,
-        Option<Changed<Control>>,
-        Option<Changed<Parent>>,
-        Option<Changed<VList>>,
-        Option<Changed<HList>>,
-        Option<Changed<GridList>>,
+        Option<Res<Parent>>,
+        Option<Res<VList>>,
+        Option<Res<HList>>,
+        Option<Res<GridList>>
     )>) {
     for (
         entity,
         control,
         _contianer,
+        parent,
         vlist,
         hlist,
-        grid_list,
-        control_changed,
-        parent_changed,
-        vlist_changed,
-        hlist_changed,
-        gridlist_changed,
+        grid_list
     ) in &query
     {
         let mut style_dictionary = HashMap::<String, String>::new();
 
-        if control_changed.is_some_and(|x| x)
-            || parent_changed.is_some_and(|x| x)
-            || vlist_changed.is_some_and(|x| x)
-            || hlist_changed.is_some_and(|x| x)
-            || gridlist_changed.is_some_and(|x| x)
+        if control.is_changed()
+            || parent.is_some_and(|x| x.is_changed())
+            || vlist.is_some_and(|x| x.is_changed())
+            || hlist.is_some_and(|x| x.is_changed())
+            || grid_list.is_some_and(|x| x.is_changed())
         {
             if vlist.is_some() {
                 let vlist = vlist.unwrap();
