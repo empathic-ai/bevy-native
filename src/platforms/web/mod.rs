@@ -79,13 +79,13 @@ pub fn create_iframe_element() -> Result<(), JsValue> {
 
 pub fn iframe_change_detection(
     _commands: Commands,
-    _query: Query<(Entity, &Control, Res<IFrame>)>,
+    _query: Query<(Entity, &Control, Ref<IFrame>)>,
 ) {
 }
 
 pub fn BLabel_change_detection(
     _commands: Commands,
-    _query: Query<(Entity, &Control, Res<BLabel>)>,
+    _query: Query<(Entity, &Control, Ref<BLabel>)>,
 ) {
 }
 
@@ -93,12 +93,12 @@ pub fn list_change_detection(
     _commands: Commands,
     query: Query<(
         Entity,
-        Res<Control>,
+        Ref<Control>,
         &Container,
-        Option<Res<Parent>>,
-        Option<Res<VList>>,
-        Option<Res<HList>>,
-        Option<Res<GridList>>
+        Option<Ref<Parent>>,
+        Option<Ref<VList>>,
+        Option<Ref<HList>>,
+        Option<Ref<GridList>>
     )>) {
     for (
         entity,
@@ -114,9 +114,9 @@ pub fn list_change_detection(
 
         if control.is_changed()
             || parent.is_some_and(|x| x.is_changed())
-            || vlist.is_some_and(|x| x.is_changed())
-            || hlist.is_some_and(|x| x.is_changed())
-            || grid_list.is_some_and(|x| x.is_changed())
+            || vlist.as_ref().is_some_and(|x| x.is_changed())
+            || hlist.as_ref().is_some_and(|x| x.is_changed())
+            || grid_list.as_ref().is_some_and(|x| x.is_changed())
         {
             if vlist.is_some() {
                 let vlist = vlist.unwrap();
@@ -255,20 +255,15 @@ pub fn base_change_detection(
     _commands: Commands,
     query: Query<(
         Entity,
-        &Control,
-        Option<&Parent>,
-        Option<&VScroll>,
-        Option<&BackgroundColor>,
-        Option<&ImageRect>,
-        Option<&BLabel>,
-        Option<&InputField>,
-        Option<&Shadow>,
-        Option<&Button>,
-        Option<Changed<Control>>,
-        Option<Changed<Parent>>,
-        Option<Changed<ImageRect>>,
-        Option<Changed<BLabel>>,
-        Option<Changed<InputField>>,
+        Ref<Control>,
+        Option<Ref<Parent>>,
+        Option<Ref<VScroll>>,
+        Option<Ref<BackgroundColor>>,
+        Option<Ref<ImageRect>>,
+        Option<Ref<BLabel>>,
+        Option<Ref<InputField>>,
+        Option<Ref<Shadow>>,
+        Option<Ref<Button>>
     )>,
     parent_container_query: Query<(&Container, Option<&VList>, Option<&HList>)>,
 ) {
@@ -282,12 +277,7 @@ pub fn base_change_detection(
         BLabel,
         input_field,
         shadow,
-        button,
-        changed_control,
-        changed_parent,
-        changed_image_rect,
-        changed_BLabel,
-        changed_input_field,
+        button
     ) in &query
     {
         //if changed_control.is_some_and(|x| x) && control.is_visible {
@@ -295,11 +285,11 @@ pub fn base_change_detection(
         //    log(format!("Control with ID {id} is visible!"));
         //}
 
-        if changed_control.is_some_and(|x| x)
-            || changed_parent.is_some_and(|x| x)
-            || changed_image_rect.is_some_and(|x| x)
-            || changed_BLabel.is_some_and(|x| x)
-            || changed_input_field.is_some_and(|x| x)
+        if control.is_changed()
+            || parent.as_ref().is_some_and(|x| x.is_changed())
+            || image_rect.as_ref().is_some_and(|x| x.is_changed())
+            || BLabel.as_ref().is_some_and(|x| x.is_changed())
+            || input_field.as_ref().is_some_and(|x| x.is_changed())
         {
             // Used for debugging
             /* 
@@ -322,7 +312,7 @@ pub fn base_change_detection(
             let mut is_parent_container = false;
 
             if parent.is_some() {
-                let parent = parent.unwrap();
+                let parent = parent.as_ref().unwrap();
 
                 let parent_container = parent_container_query.get(parent.get());
                 if parent_container.is_ok() {
@@ -344,7 +334,7 @@ pub fn base_change_detection(
                 use_pointer = true;
             }
 
-            if let Some(input_field) = input_field {
+            if let Some(input_field) = input_field.as_ref() {
                 element_type = "input".to_string();
                 style_dictionary.insert("background".to_string(), "none".to_string());
                 style_dictionary.insert("font-size".to_string(), input_field.font_size.to_string() + "px");
@@ -479,7 +469,7 @@ pub fn base_change_detection(
                     style_dictionary.insert("background-size".to_string(), "contain".to_string());
                     style_dictionary.insert("background-position".to_string(), "center".to_string());
                 }
-                if let Some(aspect_ratio) = image_rect.aspect_ratio {
+                if let Some(aspect_ratio) = image_rect.aspect_ratio.as_ref() {
                     style_dictionary.insert("min-width".to_string(), "100%".to_string());
                     style_dictionary.insert("min-height".to_string(), "100%".to_string());
                     style_dictionary.insert("aspect-ratio".to_string(), aspect_ratio.to_string());
@@ -578,7 +568,7 @@ pub fn base_change_detection(
                 format!("{top}px {right}px {bottom}px {left}px"),
             );
 
-            if let Some(BLabel) = BLabel {
+            if let Some(BLabel) = BLabel.as_ref() {
                 element_type = "p".to_string();
                 text_content = BLabel.text.to_string();
                 //style_dictionary.insert("overflow".to_string(), "unset".to_string());
@@ -769,7 +759,7 @@ pub fn update_heirarchy(mut ev_hierarchy: EventReader<HierarchyEvent>,
     _query: Query<(Entity, &Control)>,
     parents_query: Query<(Entity, &Children), Changed<Children>>,
 ) {
-    for ev in ev_hierarchy.iter() {
+    for ev in ev_hierarchy.read() {
         match ev {
             HierarchyEvent::ChildAdded { child, parent } => {
                 let child_element = add_or_get_element(*child, None);
@@ -1009,7 +999,7 @@ pub fn get_css_string(color: Color) -> String {
 }
 
 pub fn remove_detection(mut removals: RemovedComponents<Control>) {
-    for entity in removals.iter() {
+    for entity in removals.read() {
         //console::info!("DELETED {}", entity.to_bits().to_string());
         if let Some(element) = get_element(entity) {
             element.remove();
@@ -1060,7 +1050,7 @@ pub fn event_detection(
     let document = get_document();
     let _body = document.body().expect("document should have a body");
 
-    for ev in ev_snap_scroll_y.iter() {
+    for ev in ev_snap_scroll_y.read() {
         let element: Element = add_or_get_element(ev.0, None);
         element.set_scroll_top(element.scroll_height());
         //console::log!("SNAPPING SCROLL Y");

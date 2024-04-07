@@ -16,9 +16,8 @@ use web_sys::*;
 pub fn route_detection(
     query: Query<(
         Entity,
-        &Router,
-        &Children,
-        Changed<Router>,
+        Ref<Router>,
+        &Children
     )>,
     mut route_query: Query<(
         Entity,
@@ -26,8 +25,8 @@ pub fn route_detection(
         &Route
     ), Without<Router>>
 ) {
-    for (entity, router, children, router_changed) in &query {
-        if router_changed {
+    for (entity, router, children) in &query {
+        if router.is_changed() {
             //let first_path = router.path[0].clone();
             //console::log!(format!("ROUTER CHANGED"));
 
