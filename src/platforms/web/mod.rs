@@ -858,7 +858,7 @@ pub fn insert_style(element: &Element, mut target_style_dictionary: HashMap<Stri
                         target_style_dictionary.insert(key.to_string(), value.to_string());
                     }
                 } else {
-                    panic!("Invalid CSS style: {}", key_value_pair);
+                    println!("WARNING. Invalid CSS style: {}", key_value_pair);
                 }
             }
         }
