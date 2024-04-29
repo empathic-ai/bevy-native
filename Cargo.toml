@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 bevy-trait-query = "0.5.1"
-uuid = { version = "1.2.2", default-features = false, features = ["macro-diagnostics"] }
+uuid = { version = "1.2.2", features = ["v4"] }
 serde = { version = "1.0.149", features = ["derive"] }
 bevy = { version = "=0.13.0", default-features = false, features = ["bevy_ui", "bevy_asset"] }
 bevy_builder = { git = "https://github.com/empathic-ai/bevy-builder.git" }
