@@ -1,4 +1,8 @@
 mod android;
+
+#[cfg(all(target_os = "linux"))]
+mod linux;
+#[cfg(all(target_os = "linux"))]
 mod linux;
 
 #[cfg(all(target_os = "macos"))]
