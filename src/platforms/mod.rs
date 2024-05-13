@@ -3,7 +3,7 @@ mod android;
 #[cfg(all(target_os = "linux"))]
 mod linux;
 #[cfg(all(target_os = "linux"))]
-mod linux;
+pub use linux::*;
 
 #[cfg(all(target_os = "macos"))]
 mod ios;
