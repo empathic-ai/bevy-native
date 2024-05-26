@@ -1,4 +1,7 @@
+#[cfg(all(target_os = "android"))]
 mod android;
+#[cfg(all(target_os = "android"))]
+pub use android::*;
 
 #[cfg(all(target_os = "linux"))]
 mod linux;
