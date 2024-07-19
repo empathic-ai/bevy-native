@@ -4,16 +4,16 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy-trait-query = "0.5.1"
-uuid = { version = "1.2.2", features = ["v4"] }
+bevy-trait-query = { git = "https://github.com/RobWalt/bevy-trait-query.git" }
+uuid = { version = "1.9.1", features = ["v4"] }
 serde = { version = "1.0.149", features = ["derive"] }
 bevy = { version = "=0.13.0", default-features = false, features = ["bevy_ui", "bevy_asset"] }
 bevy_builder = { git = "https://github.com/empathic-ai/bevy-builder.git" }
 common = { git = "https://github.com/empathic-ai/common.git" }
 lazy_static = "1.4.0"
 base64 = "0.21.5"
-my-workspace-hack = { version = "0.1", path = "../../../my-workspace-hack" }
 regex = "1.7.1"
+# my-workspace-hack = { version = "0.1", path = "../../../my-workspace-hack" }
 
 [target.'cfg(all(target_arch = "wasm32"))'.dependencies]
 url = "2.4.1"
