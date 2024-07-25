@@ -32,10 +32,10 @@ pub fn route_detection(
 
             for child in children.iter() {
                 let mut is_path_part = true;
-                if let Ok(mut route) = route_query.get_component::<Route>(*child) {
+                if let Ok((_, _, mut route)) = route_query.get_mut(*child) {
                     is_path_part = router.path.len() > 0 && (route.name == router.path[0]);
                 }
-                if let Ok(mut control) = route_query.get_component_mut::<Control>(*child) {
+                if let Ok((_, mut control, _)) = route_query.get_mut(*child) {
                     control.is_visible = is_path_part;
                     //if is_path_part {
                         //log(format!("UPDATED {} TO VISIBLE", child.to_bits().to_string()));

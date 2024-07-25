@@ -387,10 +387,10 @@ pub fn base_change_detection(
 
             if background_color.is_some() {
                 let background_color = background_color.unwrap();
-                let r = (background_color.0.r() * 256.0) as u8;//.to_string();
-                let g = (background_color.0.g() * 256.0) as u8;//.to_string();
-                let b = (background_color.0.b() * 256.0) as u8;//.to_string();
-                let a = (background_color.0.a() * 256.0) as u8;//.to_string();
+                let r = (background_color.0.to_srgba().red * 256.0) as u8;//.to_string();
+                let g = (background_color.0.to_srgba().green * 256.0) as u8;//.to_string();
+                let b = (background_color.0.to_srgba().blue * 256.0) as u8;//.to_string();
+                let a = (background_color.0.to_srgba().alpha * 256.0) as u8;//.to_string();
                 let hex_color = format!("#{:02X}{:02X}{:02X}{:02X}", r, g, b, a);
                 style_dictionary.insert(
                     "background".to_string(),
@@ -1007,9 +1007,9 @@ pub fn get_document() -> web_sys::Document {
 }
 
 pub fn get_css_string(color: Color) -> String {
-    let r = color.r() * 255.0;
-    let g = color.g() * 255.0;
-    let b = color.b() * 255.0;
+    let r = color.to_srgba().red * 255.0;
+    let g = color.to_srgba().green * 255.0;
+    let b = color.to_srgba().blue * 255.0;
     format!("rgb({r}, {g}, {b})")
 }
 
