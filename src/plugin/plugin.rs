@@ -11,6 +11,8 @@ pub struct BevyNative;
 
 impl Plugin for BevyNative {
     fn build(&self, app: &mut App) {
+
+        #[cfg(feature = "native_ui")]
         app
         .register_component_as::<dyn BindableList, AutoBindableList>()
         .register_component_as::<dyn Bindable, AutoBindable>()

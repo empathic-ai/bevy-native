@@ -3,6 +3,10 @@ name = "bevy_native"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["native_ui"]
+native_ui = []
+
 [dependencies]
 bevy-trait-query = { git = "https://github.com/RobWalt/bevy-trait-query.git" }
 uuid = { version = "1.9.1", features = ["v4"] }
