@@ -305,6 +305,7 @@ pub fn base_change_detection(
             || image_rect.as_ref().is_some_and(|x| x.is_changed())
             || BLabel.as_ref().is_some_and(|x| x.is_changed())
             || input_field.as_ref().is_some_and(|x| x.is_changed())
+            || background_color.as_ref().is_some_and(|x| x.is_changed())
         {
             // Used for debugging
             /* 
@@ -326,14 +327,24 @@ pub fn base_change_detection(
 
             let mut is_parent_container = false;
 
-            if parent.is_some() {
-                let parent = parent.as_ref().unwrap();
-
-                let parent_container = parent_container_query.get(parent.get());
-                if parent_container.is_ok() {
-                    let (_container, _vlist, _hlist) = parent_container.unwrap();
-                    is_parent_container = true;
+            if !control.ignore_layout {
+                if parent.is_some() {
+                    let parent = parent.as_ref().unwrap();
+    
+                    let parent_container = parent_container_query.get(parent.get());
+                    if parent_container.is_ok() {
+                        //let (_container, _vlist, _hlist) = parent_container.unwrap();
+                        is_parent_container = true;
+                    }
                 }
+            }
+
+            if let Some(z_index) = control.z_index {
+                style_dictionary.insert("z-index".to_string(), z_index.to_string());
+            }
+
+            if control.use_blur {
+                style_dictionary.insert("backdrop-filter".to_string(), "blur(5px)".to_string());
             }
 
             style_dictionary.insert("display".to_string(), "grid".to_string());
@@ -685,11 +696,11 @@ pub fn base_change_detection(
                 );
                 style_dictionary.insert(
                     "-webkit-box-shadow".to_string(),
-                    "0 1px 6px rgb(32 33 36 / 28%) !important".to_string(),
+                    "0 1px 10px rgb(32 33 36 / 15%) !important".to_string(),
                 );
                 style_dictionary.insert(
                     "box-shadow".to_string(),
-                    "0 1px 6px rgb(32 33 36 / 28%) !important".to_string(),
+                    "0 1px 10px rgb(32 33 36 / 15%) !important".to_string(),
                 );
                 
                 // TODO: Add back in as an optional attribute
