@@ -212,6 +212,11 @@ pub fn list_change_detection(
                         style_dictionary.insert("align-content".to_string(), "start".to_string());
                         style_dictionary.insert("align-items".to_string(), "center".to_string());
                     }
+                    Anchor::MiddleCenter => {
+                        style_dictionary.insert("justify-content".to_string(), "center".to_string());
+                        style_dictionary.insert("align-content".to_string(), "center".to_string());
+                        style_dictionary.insert("align-items".to_string(), "center".to_string());
+                    },
                     Anchor::MiddleRight => {
                         style_dictionary.insert("justify-content".to_string(), "end".to_string());
                         style_dictionary.insert("align-content".to_string(), "center".to_string());
@@ -326,6 +331,8 @@ pub fn base_change_detection(
             let mut use_pointer = false;
 
             let mut is_parent_container = false;
+            let mut is_v_list = false;
+            let mut is_h_list = false;
 
             if !control.ignore_layout {
                 if parent.is_some() {
@@ -333,7 +340,9 @@ pub fn base_change_detection(
     
                     let parent_container = parent_container_query.get(parent.get());
                     if parent_container.is_ok() {
-                        //let (_container, _vlist, _hlist) = parent_container.unwrap();
+                        let (_container, _vlist, _hlist) = parent_container.unwrap();
+                        is_v_list = _vlist.is_some();
+                        is_h_list = _hlist.is_some();
                         is_parent_container = true;
                     }
                 }
@@ -509,6 +518,14 @@ pub fn base_change_detection(
 
             if is_parent_container {
                 style_dictionary.insert("position".to_string(), "relative".to_string());
+                /*
+                if control.fixed_height != -1.0 && is_h_list {
+                    style_dictionary.insert("margin".to_string(), "auto 0px auto 0px".to_string());
+                }
+                if control.fixed_width != -1.0 && is_v_list {
+                    style_dictionary.insert("margin".to_string(), "0px auto 0px auto".to_string());
+                }
+                */
             } else {
                 style_dictionary.insert("position".to_string(), "absolute".to_string());
 

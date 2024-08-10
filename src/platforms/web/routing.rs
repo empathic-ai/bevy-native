@@ -88,7 +88,7 @@ pub fn set_route(mut path: &str) {
     if path == "".to_string() {
         path = "/".to_string();
     }
-    window.history().unwrap().push_state_with_url(&JsValue::from_str(""), "Taby", Some(&path)).unwrap();
+    window.history().unwrap().push_state_with_url(&JsValue::from_str(""), "", Some(&path)).unwrap();
 
     route();
     //window. .pushState('page2', 'Title', '/page2.php');
