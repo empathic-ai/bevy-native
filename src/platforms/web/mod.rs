@@ -1,4 +1,5 @@
 mod routing;
+use bevy::ecs::world::Command;
 pub use routing::*;
 
 mod main_js;
@@ -26,6 +27,8 @@ use base64::{engine::general_purpose, Engine as _};
 
 use web_sys::js_sys;
 use common::prelude::*;
+
+use bevy_cobweb::prelude::*;
 
 use crate::*;
 
@@ -1074,6 +1077,7 @@ pub fn on_show_detection(
 }
 
 pub fn event_detection(
+    //world: &mut World,
     mut commands: Commands,
     mut ev_click: EventWriter<ClickEvent>,
     mut ev_submit: EventWriter<SubmitEvent>,
@@ -1178,7 +1182,13 @@ pub fn event_detection(
                 let was_clicked = element.get_attribute("was_clicked");
                 if was_clicked.is_some() {
                     let _ = element.remove_attribute("was_clicked");
-                    on_click.func.call(&mut commands);
+
+                    let func = on_click.func;
+                    commands.add(move |world: &mut World| {
+                        func.apply(world);
+                    });
+              
+                    //.call(&mut commands);
                     ev_click.send(ClickEvent(entity));
                 }
             }
