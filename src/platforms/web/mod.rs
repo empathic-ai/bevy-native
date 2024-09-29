@@ -880,7 +880,7 @@ pub fn clear_event(key: &str) {
 }
 
 pub fn get_root_element() -> Option<Element> {
-    get_document().get_element_by_id("main")
+    get_document().get_element_by_id("bevy-native-root")
 }
 
 pub fn get_node(entity: Entity) -> Option<web_sys::Node> {
