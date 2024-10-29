@@ -1,7 +1,7 @@
 use crate::*;
 use bevy_builder::prelude::*;
 
-use bevy::utils::HashMap;
+use std::collections::HashMap;
 
 use bevy::hierarchy::HierarchyEvent;
 use bevy::prelude::*;
@@ -66,6 +66,19 @@ pub fn get_route_params() -> HashMap<String, String> {
     return params;
 }
 
+fn to_url_params(params: &HashMap<String, String>) -> String {
+    let mut url_params = String::new();
+
+    for (key, value) in params {
+        if !url_params.is_empty() {
+            url_params.push('&');
+        }
+        url_params.push_str(&format!("{}={}", key, value));
+    }
+
+    url_params
+}
+
 pub fn convert_to_dictionary(search_params: UrlSearchParams) ->  HashMap<String, String> {
     let mut dictionary: HashMap<String, String> = HashMap::new();
 
@@ -81,6 +94,13 @@ pub fn convert_to_dictionary(search_params: UrlSearchParams) ->  HashMap<String,
 }
 
 pub fn set_route(mut path: &str) {
+    set_route_simple(path);
+
+    route();
+    //window. .pushState('page2', 'Title', '/page2.php');
+}
+
+pub fn set_route_simple(mut path: &str) {
     use wasm_bindgen::JsValue;
 
     let mut path = path.to_string();
@@ -90,38 +110,98 @@ pub fn set_route(mut path: &str) {
     }
     window.history().unwrap().push_state_with_url(&JsValue::from_str(""), "", Some(&path)).unwrap();
 
-    route();
+    //route();
     //window. .pushState('page2', 'Title', '/page2.php');
 }
 
-pub fn update_route(
-    mut query: bevy::prelude::Query<(Entity, &mut Router)>, mut ev_writer: EventWriter<RouteChange>) {
-
-
-    let (tx, rx) = &mut *ROUTE_CHANNEL.lock().unwrap();
-
-    match rx.try_recv() {
-        Ok(ev) => {
-            for (entity, mut router) in query.iter_mut() {
-                //console::log!(format!("UPDATING ROUTER"));
-                router.path = ev.path.clone();
-                router.params = ev.params.clone();
+/*
+#[cfg(not(target_arch = "xtensa"))]
+pub fn map_route() {
+    for ev in ev_reader.read() {
+        if ev.path.len() == 0 || ev.path[0] == "" || ev.path[0] == "/" {
+            //ev_writer.send(RouteChange {
+            //    path: (&["sign_up".to_string()]).to_vec(),
+            //    ..default()
+            //});
+            /*
+            if !client.user.lock().unwrap().is_none() {
+                set_route("multi_chat");
+            } else {
+                set_route(DEFAULT_TABY_ROUTE);
             }
-
-            let new_route = ev.path.join("/");
-            if get_route().trim_start_matches('/') != new_route || get_route_params() != ev.params {
-                set_route(&new_route);
-            }
-
-            ev_writer.send(ev);
+            */
         }
-        Err(_) => {
+        //if ev.path.len() > 0 && ev.path[0] == "profile" {
+        //    if client.id_token.lock().unwrap().is_none() {
+        //        set_route("entry".to_string());
+        //    }
+        //}
+    }
+} */
+
+pub fn update_route(
+    mut query: bevy::prelude::Query<(Entity, &mut Router)>, mut evs: ResMut<Events<RouteChange>>) {
+
+
+    {
+        let (tx, rx) = &mut *ROUTE_CHANNEL.lock().unwrap();
+        match rx.try_recv() {
+            Ok(ev) => {
+                let (_, mut router) = query.single_mut();
+                if router.path != ev.path || router.params != ev.params {
+                    router.path = ev.path.clone();
+                    router.params = ev.params.clone();
+                    evs.send(ev);
+                }
+ 
+                /*
+                for (entity, mut router) in query.iter_mut() {
+                    //console::log!(format!("UPDATING ROUTER"));
+                    router.path = ev.path.clone();
+                    router.params = ev.params.clone();
+                }
+    
+                let new_route = ev.path.join("/");
+                if get_route().trim_start_matches('/') != new_route || get_route_params() != ev.params {
+                    let new_route = new_route + "/" + &to_url_params(&ev.params);
+                    info!("New route: {}", new_route);
+                    set_route(&new_route);
+                }*/
+    
+
+            }
+            Err(_) => {
+            }
+        }
+    }
+
+    for ev in evs.get_reader().read(&evs) {
+        let (_, mut router) = query.single_mut();
+        if router.path != ev.path || router.params != ev.params {
+            router.path = ev.path.clone();
+            router.params = ev.params.clone();
+
+            let mut new_route = ev.path.join("/");
+            let params = to_url_params(&ev.params);
+
+            if get_route().trim_start_matches('/') != new_route || to_url_params(&get_route_params()) != params {
+                if ev.params.len() > 0 {
+                    new_route = new_route + "?" + &params;
+                }
+        
+                //info!("New route: {}", new_route);
+                set_route_simple(&new_route);
+            }
         }
     }
 }
 
 pub fn route() {
     let route = get_route();
+
+    let params = to_url_params(&get_route_params());
+    //info!("Browser route: {}", route);
+    //info!("Browser params: {}", params);
 
     let (tx, rx) = &mut *ROUTE_CHANNEL.lock().unwrap();
 
