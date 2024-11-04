@@ -1,9 +1,10 @@
 use bevy::{
     ecs::{archetype::Archetypes, component::ComponentId},
     prelude::{Changed, Component, Entity, Query, Resource, World, Event},
-    reflect::{TypeRegistry, reflect_trait, Reflect},
-    utils::HashMap,
+    reflect::{TypeRegistry, reflect_trait, Reflect}
 };
+
+use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -14,6 +15,14 @@ use bevy_trait_query::RegisterExt;
 
 pub mod plugin;
 pub use plugin::BevyNative;
+
+use bevy::{prelude::*};
+
+#[derive(Default, Event)]
+pub struct RouteChange {
+    pub path: Vec<String>,
+    pub params: HashMap<String, String>//HashMap<String, Box<dyn Reflect>>
+}
 
 /*
 #[derive(Debug, Clone, Deserialize, Serialize)]

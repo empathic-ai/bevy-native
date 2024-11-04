@@ -1,4 +1,5 @@
 use crate::*;
+use bevy::reflect::{List, DynamicList, DynamicStruct};
 use bevy_builder::prelude::*;
 
 use std::collections::HashMap;
@@ -13,7 +14,8 @@ use wasm_bindgen::{prelude::*, JsCast};
 
 use web_sys::*;
 
-pub fn route_detection(
+pub fn route_detection(mut commands: Commands,
+    mut db_config: ResMut<DBConfig>,
     query: Query<(
         Entity,
         Ref<Router>,
@@ -22,7 +24,8 @@ pub fn route_detection(
     mut route_query: Query<(
         Entity,
         &mut Control,
-        &Route
+        &Route,
+        Option<&mut AutoBindableProperty>
     ), Without<Router>>
 ) {
     for (entity, router, children) in &query {
@@ -32,14 +35,14 @@ pub fn route_detection(
 
             for child in children.iter() {
                 let mut is_path_part = true;
-                if let Ok((_, _, mut route)) = route_query.get_mut(*child) {
+                if let Ok((_, _, mut route, _)) = route_query.get_mut(*child) {
                     is_path_part = router.path.len() > 0 && (route.name == router.path[0]);
                 }
-                if let Ok((_, mut control, _)) = route_query.get_mut(*child) {
+                if let Ok((entity, mut control, _, bindable)) = route_query.get_mut(*child) {
                     control.is_visible = is_path_part;
-                    //if is_path_part {
-                        //log(format!("UPDATED {} TO VISIBLE", child.to_bits().to_string()));
-                    //}
+                    if is_path_part {
+                        commands.trigger_targets(ShowView { params: router.params.clone() }, entity);
+                    }
                 }
             }
         }
@@ -148,9 +151,11 @@ pub fn update_route(
         match rx.try_recv() {
             Ok(ev) => {
                 let (_, mut router) = query.single_mut();
-                if router.path != ev.path || router.params != ev.params {
+
+                let params = ev.params.clone(); //ev.params.iter().map(|(key, value)| (key.clone(), reflect_to_json(value.as_reflect()).to_string())).collect();
+                if router.path != ev.path || router.params != params {
                     router.path = ev.path.clone();
-                    router.params = ev.params.clone();
+                    router.params = params;
                     evs.send(ev);
                 }
  
@@ -177,12 +182,14 @@ pub fn update_route(
 
     for ev in evs.get_reader().read(&evs) {
         let (_, mut router) = query.single_mut();
-        if router.path != ev.path || router.params != ev.params {
+        let params = ev.params.clone();//.iter().map(|(key, value)| (key.clone(), reflect_to_json(value.as_reflect()).to_string())).collect();
+
+        if router.path != ev.path || router.params != params {
             router.path = ev.path.clone();
-            router.params = ev.params.clone();
+            router.params = params.clone();
 
             let mut new_route = ev.path.join("/");
-            let params = to_url_params(&ev.params);
+            let params = to_url_params(&params);
 
             if get_route().trim_start_matches('/') != new_route || to_url_params(&get_route_params()) != params {
                 if ev.params.len() > 0 {

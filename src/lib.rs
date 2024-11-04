@@ -6,13 +6,7 @@ use std::collections::HashMap;
 
 pub use platforms::*;
 
+#[cfg(not(target_arch = "xtensa"))]
 mod plugin;
+#[cfg(not(target_arch = "xtensa"))]
 pub use plugin::*;
-
-use bevy::{prelude::*};
-
-#[derive(Default, Event)]
-pub struct RouteChange {
-    pub path: Vec<String>,
-    pub params: HashMap<String, String>
-}
