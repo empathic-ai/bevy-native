@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_builder::prelude::*;
+use flux::prelude::*;
 use crate::*;
 
 use serde::{Deserialize, Serialize};
@@ -20,7 +20,7 @@ impl Plugin for BevyNative {
         .register_component_as::<dyn Bindable, InteractState>()
         .register_component_as::<dyn Bindable, SearchInput>()
         //.add_plugins((bevy::MinimalPlugins, bevy::hierarchy::HierarchyPlugin))
-        .insert_resource(bevy_builder::prelude::Bindings { ..default() } )
+        .insert_resource(flux::prelude::BindingsConfig { ..default() } )
         //.insert_resource(client)
         .add_event::<RouteChange>()
         .add_event::<LogoutEvent>()

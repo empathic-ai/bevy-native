@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-default = ["native_ui", "dep:bevy"]
+default = ["native_ui", "bevy"]
+bevy = ["dep:bevy", "flux/bevy"]
 native_ui = []
 
 [target.'cfg(not(target_arch = "xtensa"))'.dependencies]
@@ -12,7 +13,7 @@ bevy-trait-query = { git = "https://github.com/dead-money/bevy-trait-query", bra
 uuid = { version = "1.9.1", features = ["v4"] }
 serde = { version = "1.0.149", features = ["derive"] }
 bevy = { version = "=0.14.0", default-features = false }
-bevy_builder = { git = "https://github.com/empathic-ai/bevy-builder.git" }
+flux = { git = "https://github.com/empathic-ai/flux.git", default-features = false }
 common = { git = "https://github.com/empathic-ai/common.git" }
 lazy_static = "1.4.0"
 base64 = "0.21.5"

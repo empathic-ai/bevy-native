@@ -1,6 +1,6 @@
 use crate::*;
 use bevy::reflect::{List, DynamicList, DynamicStruct};
-use bevy_builder::prelude::*;
+use flux::prelude::*;
 
 use std::collections::HashMap;
 
@@ -30,8 +30,10 @@ pub fn route_detection(mut commands: Commands,
 ) {
     for (entity, router, children) in &query {
         if router.is_changed() {
-            //let first_path = router.path[0].clone();
-            //console::log!(format!("ROUTER CHANGED"));
+            if router.path.len() > 0 {
+                let first_path = router.path[0].clone();
+                info!("ROUTER CHANGED: {}", first_path);
+            }
 
             for child in children.iter() {
                 let mut is_path_part = true;

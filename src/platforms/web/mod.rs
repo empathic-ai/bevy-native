@@ -4,7 +4,7 @@ pub use routing::*;
 
 mod main_js;
 
-use bevy_builder::prelude::*;
+use flux::prelude::*;
 
 use bevy::utils::HashMap;
 
