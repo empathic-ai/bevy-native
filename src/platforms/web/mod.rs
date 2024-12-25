@@ -28,7 +28,7 @@ use base64::{engine::general_purpose, Engine as _};
 use web_sys::js_sys;
 use common::prelude::*;
 
-use bevy_cobweb::prelude::*;
+//use bevy_cobweb::prelude::*;
 
 use crate::*;
 
@@ -42,6 +42,10 @@ lazy_static! {
 use wasm_bindgen::prelude::*;
 use web_sys::window;
 use regex::Regex;
+
+pub fn is_tauri() -> bool {
+	todo!()
+}
 
 pub fn is_mobile() -> bool {
     let navigator = window().unwrap().navigator();
@@ -103,7 +107,7 @@ pub fn iframe_change_detection(
 
 pub fn BLabel_change_detection(
     _commands: Commands,
-    _query: Query<(Entity, &Control, Ref<BLabel>)>,
+    _query: Query<(Entity, &Control, Ref<TextLabel>)>,
 ) {
 }
 
@@ -283,7 +287,7 @@ pub fn base_change_detection(
         Option<Ref<VScroll>>,
         Option<Ref<BackgroundColor>>,
         Option<Ref<ImageRect>>,
-        Option<Ref<BLabel>>,
+        Option<Ref<TextLabel>>,
         Option<Ref<InputField>>,
         Option<Ref<Shadow>>,
         Option<Ref<Button>>
@@ -1068,8 +1072,8 @@ pub fn on_show_detection(
                 //log(format!("SHOWN: {}", entity.to_bits().to_string()));
                 //let c: &mut Commands<'_, '_> = &mut commands;
                 commands.entity(entity).insert(Shown{});
-                if let Some(func) = on_show.func.as_ref() {
-                    func.call(&mut commands);
+                if let Some(system) = on_show.system.as_ref() {
+                    commands.run_system(system.clone());
                 }
             }
         }
@@ -1183,10 +1187,7 @@ pub fn event_detection(
                 if was_clicked.is_some() {
                     let _ = element.remove_attribute("was_clicked");
 
-                    let func = on_click.func;
-                    commands.add(move |world: &mut World| {
-                        func.apply(world);
-                    });
+                    commands.run_system(on_click.system);
               
                     //.call(&mut commands);
                     ev_click.send(ClickEvent(entity));

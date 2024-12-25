@@ -15,12 +15,12 @@ impl Plugin for BevyNative {
         #[cfg(feature = "native_ui")]
         app
         .register_component_as::<dyn BindableList, AutoBindableList>()
-        .register_component_as::<dyn Bindable, AutoBindable>()
+        //.register_component_as::<dyn Bindable, AutoBindable>()
         .register_component_as::<dyn Bindable, UsageView>()
         .register_component_as::<dyn Bindable, InteractState>()
         .register_component_as::<dyn Bindable, SearchInput>()
         //.add_plugins((bevy::MinimalPlugins, bevy::hierarchy::HierarchyPlugin))
-        .insert_resource(flux::prelude::BindingsConfig { ..default() } )
+        .insert_resource(flux::prelude::BindingsConfig::default())
         //.insert_resource(client)
         .add_event::<RouteChange>()
         .add_event::<LogoutEvent>()
@@ -56,7 +56,7 @@ impl Plugin for BevyNative {
                 //main_view::process,
                 //process_search_input,
                 //process_sliders,
-                propogate_forms,
+                //propogate_forms,
                 process_form_on_submit,
                 //base_change_detection,
                 remove_detection
