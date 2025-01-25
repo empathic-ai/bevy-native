@@ -43,10 +43,6 @@ use wasm_bindgen::prelude::*;
 use web_sys::window;
 use regex::Regex;
 
-pub fn is_tauri() -> bool {
-	todo!()
-}
-
 pub fn is_mobile() -> bool {
     let navigator = window().unwrap().navigator();
     let user_agent = navigator.user_agent().unwrap_or_else(|_| String::new());
