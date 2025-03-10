@@ -43,6 +43,8 @@ use wasm_bindgen::prelude::*;
 use web_sys::window;
 use regex::Regex;
 
+const BEVY_NATIVE_ID_ATTRIBUTE: &str = "bevy-native-id";
+
 pub fn is_mobile() -> bool {
     let navigator = window().unwrap().navigator();
     let user_agent = navigator.user_agent().unwrap_or_else(|_| String::new());
@@ -951,7 +953,7 @@ pub fn add_or_get_element(entity: Entity, element_type: Option<String>) -> Eleme
         let element = create_element(element_type);
 
         let silk_id = entity.to_bits().to_string();
-        let _  = element.set_attribute("silk-id", &silk_id.clone());
+        let _  = element.set_attribute(BEVY_NATIVE_ID_ATTRIBUTE, &silk_id.clone());
 
         let e = element.clone();
         let f = Closure::wrap(Box::new(move |ev: js_sys::Array| {
@@ -1029,7 +1031,7 @@ pub fn get_element(entity: Entity) -> Option<Element> {
 }
 
 pub fn get_element_from_str(id: String) -> Option<Element> {
-    get_document().query_selector(&format!(r#"[silk-id="{id}"]"#)).unwrap()
+    get_document().query_selector(&format!(r#"[{BEVY_NATIVE_ID_ATTRIBUTE}="{id}"]"#)).unwrap()
 }
 
 pub fn get_document() -> web_sys::Document {

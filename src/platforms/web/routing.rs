@@ -32,7 +32,6 @@ pub fn route_detection(mut commands: Commands,
         if router.is_changed() {
             if router.path.len() > 0 {
                 let first_path = router.path[0].clone();
-                info!("ROUTER CHANGED: {}", first_path);
             }
 
             for child in children.iter() {
