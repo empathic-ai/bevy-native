@@ -1175,7 +1175,7 @@ pub fn event_detection(
                     //console::info!(format!("{} submitted.", entity.to_bits().to_string()));
                     ev_submit.send(SubmitEvent(entity));
                     if let Some(on_submitted) = input_field.on_submitted.as_ref() {
-                        on_submitted.call(&mut commands);
+                        commands.run_system(*on_submitted);
                     }
                 }
             }
@@ -1198,7 +1198,7 @@ pub fn event_detection(
 
                     let _ = element.remove_attribute("was_clicked");
                     if let Some(on_click) = button.on_click.as_ref() {
-                        on_click.call(&mut commands);
+                        commands.run_system(*on_click);
                     }
                     ev_click.send(ClickEvent(entity));
                 }

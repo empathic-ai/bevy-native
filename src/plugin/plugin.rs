@@ -9,6 +9,7 @@ use bevy_trait_query::RegisterExt;
 
 pub struct BevyNative;
 
+
 impl Plugin for BevyNative {
     fn build(&self, app: &mut App) {
 
