@@ -145,8 +145,6 @@ pub fn map_route() {
 
 pub fn update_route(
     mut query: bevy::prelude::Query<(Entity, &mut Router)>, mut evs: ResMut<Events<RouteChange>>) {
-
-
     {
         let (tx, rx) = &mut *ROUTE_CHANNEL.lock().unwrap();
         match rx.try_recv() {

@@ -39,7 +39,7 @@ impl Plugin for BevyNative {
             update_route,
             route_detection,
             on_show_detection,
-        ).chain())
+        ).chain().run_if(in_state(DbState::Connected)))
         .add_systems(Update,
             (
                 base_change_detection,
@@ -61,7 +61,7 @@ impl Plugin for BevyNative {
                 process_form_on_submit,
                 //base_change_detection,
                 remove_detection
-            ).chain()
+            ).chain().run_if(in_state(DbState::Connected))
         ).add_systems(PostUpdate,
             (
                 base_change_detection,
@@ -72,9 +72,9 @@ impl Plugin for BevyNative {
                 //process_form_on_submit,
                 //process_responsive_elements,
                 remove_detection
-            ).chain()
+            ).chain().run_if(in_state(DbState::Connected))
         )
-        .add_systems(PostStartup, route_detection)
+        //.add_systems(PostStartup, route_detection)
         .add_systems(Startup, setup);
     }
 }
