@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{ecs::schedule::NodeConfigs, prelude::*};
 use flux::prelude::*;
 use crate::*;
 
@@ -35,33 +35,9 @@ impl Plugin for BevyNative {
         .add_event::<SubmitEvent>()
         .add_event::<SnapScrollY>()
         .add_systems(PreUpdate,
-        (
-            update_route,
-            route_detection,
-            on_show_detection,
-        ).chain().run_if(in_state(DbState::Connected)))
-        .add_systems(Update,
-            (
-                base_change_detection,
-                list_change_detection,
-                update_heirarchy,
-                //taby_client::network_detection,
-                //update_route,
-                //route_detection,
-                //on_show_detection,
-                event_detection,
-                base_change_detection,
-                list_change_detection,
-                process_responsive_elements,
-                //taby_client::process,
-                //main_view::process,
-                //process_search_input,
-                //process_sliders,
-                //propogate_forms,
-                process_form_on_submit,
-                //base_change_detection,
-                remove_detection
-            ).chain().run_if(in_state(DbState::Connected))
+            render_ui()
+        ).add_systems(Update,
+            render_ui()
         ).add_systems(PostUpdate,
             (
                 base_change_detection,
@@ -72,9 +48,43 @@ impl Plugin for BevyNative {
                 //process_form_on_submit,
                 //process_responsive_elements,
                 remove_detection
-            ).chain().run_if(in_state(DbState::Connected))
+            ).chain()
         )
         //.add_systems(PostStartup, route_detection)
         .add_systems(Startup, setup);
     }
+}
+
+pub fn render_ui() -> NodeConfigs<Box<dyn System<In = (), Out = ()>>> {
+    (
+        update_route,
+        route_detection,
+        on_show_detection,
+
+ 
+        base_change_detection,
+        list_change_detection,
+        update_heirarchy,
+
+        //taby_client::network_detection,
+        //update_route,
+        //route_detection,
+        //on_show_detection,
+        event_detection,
+        base_change_detection,
+        list_change_detection,
+
+        // TODO: Handle recursive updating better--currently just reruns basic updates afterwards
+        // May modify width and heights of elements based on other elements updated
+        process_responsive_elements,
+
+        //taby_client::process,
+        //main_view::process,
+        //process_search_input,
+        //process_sliders,
+        //propogate_forms,
+        process_form_on_submit,
+        //base_change_detection,
+        remove_detection
+    ).chain()
 }

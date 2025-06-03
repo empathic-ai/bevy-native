@@ -7,16 +7,17 @@ edition = "2024"
 default = ["native_ui", "bevy"]
 bevy = ["dep:bevy", "flux/bevy"]
 native_ui = []
+std = ["bevy?/bevy_ui", "bevy?/bevy_asset"]
 
 [dependencies]
 serde_json = "1.0"
-bevy = { version = "0.15.3", default-features = false, features = ["bevy_ui", "bevy_asset"], optional = true }
+bevy = { git = "https://github.com/empathic-ai/bevy.git", branch = "reflect/serializable-dynamic-types", default-features = false, optional = true }
 
 [target.'cfg(not(target_arch = "xtensa"))'.dependencies]
-bevy-trait-query = { version = "0.7.0" }
-uuid = { version = "=1.12", features = ["v4"] }
+bevy-trait-query = { git = "https://github.com/Catchawink/bevy-trait-query.git", branch = "reflect/serializable-dynamic-types" }
+uuid = { version = "1.13", features = ["v4"] }
 serde = { version = "1.0.149", features = ["derive"] }
-bevy = { version = "0.15.3", default-features = false }
+bevy = { git = "https://github.com/empathic-ai/bevy.git", branch = "reflect/serializable-dynamic-types", default-features = false }
 flux = { git = "https://github.com/empathic-ai/flux.git", default-features = false }
 common = { git = "https://github.com/empathic-ai/common.git" }
 lazy_static = "1.4.0"

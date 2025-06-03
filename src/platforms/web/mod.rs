@@ -282,6 +282,7 @@ pub fn base_change_detection(
         Entity,
         Ref<Control>,
         Option<Ref<Parent>>,
+        Option<Ref<HScroll>>,
         Option<Ref<VScroll>>,
         Option<Ref<BackgroundColor>>,
         Option<Ref<ImageRect>>,
@@ -296,6 +297,7 @@ pub fn base_change_detection(
         entity,
         control,
         parent,
+        hscroll,
         vscroll,
         background_color,
         image_rect,
@@ -363,7 +365,7 @@ pub fn base_change_detection(
 
             style_dictionary.insert("display".to_string(), "grid".to_string());
             style_dictionary.insert("background".to_string(), "none".to_string());
-            if control.IsOverflow {
+            if control.is_overflow {
                 style_dictionary.insert("overflow".to_string(), "unset".to_string());
             } else {
                 style_dictionary.insert("overflow".to_string(), "auto".to_string());
@@ -424,7 +426,7 @@ pub fn base_change_detection(
                 );
             }
 
-            if control.ExpandWidth {
+            if control.expand_width {
                 style_dictionary.insert("width".to_string(), "100%".to_string());
                 style_dictionary.insert("left".to_string(), "0".to_string());
                 style_dictionary.insert("right".to_string(), "0".to_string());
@@ -616,21 +618,21 @@ pub fn base_change_detection(
                 format!("{top}px {right}px {bottom}px {left}px"),
             );
 
-            if let Some(BLabel) = BLabel.as_ref() {
+            if let Some(b_label) = BLabel.as_ref() {
                 element_type = "p".to_string();
-                text_content = BLabel.text.to_string();
+                text_content = b_label.text.to_string();
                 //style_dictionary.insert("overflow".to_string(), "unset".to_string());
-                style_dictionary.insert("font-family".to_string(), BLabel.font.clone());
+                style_dictionary.insert("font-family".to_string(), b_label.font.clone());
 
-                style_dictionary.insert("font-size".to_string(), BLabel.font_size.to_string() + "px");
-                style_dictionary.insert("color".to_string(), get_css_string(BLabel.color));
+                style_dictionary.insert("font-size".to_string(), b_label.font_size.to_string() + "px");
+                style_dictionary.insert("color".to_string(), get_css_string(b_label.color));
                 
-                if BLabel.is_shadow {
+                if b_label.is_shadow {
                     style_dictionary.insert("text-shadow".to_string(), "2px 2px 15px rgba(0,0,0,.4)".to_string());
                 }                
 
                 let alignment: String;
-                match BLabel.alignment {
+                match b_label.alignment {
                     Anchor::UpperLeft | Anchor::MiddleLeft | Anchor::LowerLeft => {
                         alignment = "left".to_string()
                     }
@@ -648,35 +650,38 @@ pub fn base_change_detection(
                 use_pointer = true;
 
                 // Margin override for evil fonts
-                if BLabel.font == "Mogra".to_string() {
+                if b_label.font == "Mogra".to_string() {
                     let offset = 0.0;//BLabel.FontSize / 6.0;
                     style_dictionary.insert("margin".to_string(), format!("0px 0px -{offset}px 0px").to_string());
                 } else {
                     style_dictionary.insert("margin".to_string(), 0.to_string());
                 }
 
-                if BLabel.is_single_line && !control.ExpandWidth {
-                    style_dictionary.insert("box-sizing".to_string(), "content-box".to_string());
-                    style_dictionary.insert("word-break".to_string(), "normal".to_string());
-                    style_dictionary.insert("width".to_string(), "max-content".to_string());
-                    style_dictionary.insert("flex-shrink".to_string(), "0".to_string());
+                if b_label.is_single_line {
+                    if !control.expand_width {
+                        style_dictionary.insert("box-sizing".to_string(), "content-box".to_string());
+                        style_dictionary.insert("word-break".to_string(), "normal".to_string());
+                        style_dictionary.insert("width".to_string(), "max-content".to_string());
+                        style_dictionary.insert("flex-shrink".to_string(), "0".to_string());
+                    }
+                    style_dictionary.insert("line-height".to_string(), b_label.font_size.to_string() + "px");
                 }
 
-                if BLabel.is_italic {
+                if b_label.is_italic {
                     style_dictionary.insert("font-style".to_string(), "italic".to_string());
                 }
-                if BLabel.is_bold {
+                if b_label.is_bold {
                     style_dictionary.insert("font-weight".to_string(), "bold".to_string());
                 } else {
-                    let font_weight = BLabel.font_weight;
+                    let font_weight = b_label.font_weight;
                     style_dictionary.insert("font-weight".to_string(), format!("{font_weight}").to_string());
                 }
 
-                if BLabel.is_3d {
+                if b_label.is_3d {
                     let color = "#aeaeae";
 
                     let mut depth_string = "".to_string();
-                    let depth = (BLabel.font_size / 5.0) as i32;
+                    let depth = (b_label.font_size / 5.0) as i32;
                     for i in 0..depth {
                         let depth_val = i + 1;
                         depth_string += &format!("0px {depth_val}px 0px {color}, ");
@@ -697,7 +702,7 @@ pub fn base_change_detection(
                     style_dictionary.insert("transform".to_string(), "perspective(1000px) rotateX(25deg)".to_string());
                 }
 
-                if let Some(line_height) = BLabel.line_height {
+                if let Some(line_height) = b_label.line_height {
                     style_dictionary.insert("line-height".to_string(), format!("{line_height}px").to_string());
                 }
             }

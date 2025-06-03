@@ -15,7 +15,6 @@ use wasm_bindgen::{prelude::*, JsCast};
 use web_sys::*;
 
 pub fn route_detection(mut commands: Commands,
-    mut db_config: ResMut<DBConfig>,
     query: Query<(
         Entity,
         Ref<Router>,
@@ -145,58 +144,57 @@ pub fn map_route() {
 
 pub fn update_route(
     mut query: bevy::prelude::Query<(Entity, &mut Router)>, mut evs: ResMut<Events<RouteChange>>) {
-    {
+
+    if let Ok((_, mut router)) = query.get_single_mut() {
+
         let (tx, rx) = &mut *ROUTE_CHANNEL.lock().unwrap();
         match rx.try_recv() {
             Ok(ev) => {
-                let (_, mut router) = query.single_mut();
 
-                let params = ev.params.clone(); //ev.params.iter().map(|(key, value)| (key.clone(), reflect_to_json(value.as_reflect()).to_string())).collect();
-                if router.path != ev.path || router.params != params {
-                    router.path = ev.path.clone();
-                    router.params = params;
-                    evs.send(ev);
-                }
- 
-                /*
-                for (entity, mut router) in query.iter_mut() {
-                    //console::log!(format!("UPDATING ROUTER"));
-                    router.path = ev.path.clone();
-                    router.params = ev.params.clone();
-                }
+                    let params = ev.params.clone(); //ev.params.iter().map(|(key, value)| (key.clone(), reflect_to_json(value.as_reflect()).to_string())).collect();
+                    if router.path != ev.path || router.params != params {
+                        router.path = ev.path.clone();
+                        router.params = params;
+                        evs.send(ev);
+                    }
     
-                let new_route = ev.path.join("/");
-                if get_route().trim_start_matches('/') != new_route || get_route_params() != ev.params {
-                    let new_route = new_route + "/" + &to_url_params(&ev.params);
-                    info!("New route: {}", new_route);
-                    set_route(&new_route);
-                }*/
-    
+                    /*
+                    for (entity, mut router) in query.iter_mut() {
+                        //console::log!(format!("UPDATING ROUTER"));
+                        router.path = ev.path.clone();
+                        router.params = ev.params.clone();
+                    }
+        
+                    let new_route = ev.path.join("/");
+                    if get_route().trim_start_matches('/') != new_route || get_route_params() != ev.params {
+                        let new_route = new_route + "/" + &to_url_params(&ev.params);
+                        info!("New route: {}", new_route);
+                        set_route(&new_route);
+                    }*/    
 
             }
             Err(_) => {
             }
         }
-    }
-
-    for ev in evs.get_reader().read(&evs) {
-        let (_, mut router) = query.single_mut();
-        let params = ev.params.clone();//.iter().map(|(key, value)| (key.clone(), reflect_to_json(value.as_reflect()).to_string())).collect();
-
-        if router.path != ev.path || router.params != params {
-            router.path = ev.path.clone();
-            router.params = params.clone();
-
-            let mut new_route = ev.path.join("/");
-            let params = to_url_params(&params);
-
-            if get_route().trim_start_matches('/') != new_route || to_url_params(&get_route_params()) != params {
-                if ev.params.len() > 0 {
-                    new_route = new_route + "?" + &params;
-                }
         
-                //info!("New route: {}", new_route);
-                set_route_simple(&new_route);
+        for ev in evs.get_reader().read(&evs) {
+            let params = ev.params.clone();//.iter().map(|(key, value)| (key.clone(), reflect_to_json(value.as_reflect()).to_string())).collect();
+
+            if router.path != ev.path || router.params != params {
+                router.path = ev.path.clone();
+                router.params = params.clone();
+
+                let mut new_route = ev.path.join("/");
+                let params = to_url_params(&params);
+
+                if get_route().trim_start_matches('/') != new_route || to_url_params(&get_route_params()) != params {
+                    if ev.params.len() > 0 {
+                        new_route = new_route + "?" + &params;
+                    }
+            
+                    //info!("New route: {}", new_route);
+                    set_route_simple(&new_route);
+                }
             }
         }
     }

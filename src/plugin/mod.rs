@@ -14,7 +14,7 @@ use bevy::prelude::*;
 use bevy_trait_query::RegisterExt;
 
 pub mod plugin;
-pub use plugin::BevyNative;
+pub use plugin::*;
 
 use bevy::{prelude::*};
 
