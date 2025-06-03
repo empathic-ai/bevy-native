@@ -4,7 +4,7 @@ use flux::prelude::*;
 
 use std::collections::HashMap;
 
-use bevy::hierarchy::HierarchyEvent;
+//use bevy::hierarchy::HierarchyEvent;
 use bevy::prelude::*;
 
 use bevy::ecs::event::{Event, EventWriter};
@@ -35,10 +35,10 @@ pub fn route_detection(mut commands: Commands,
 
             for child in children.iter() {
                 let mut is_path_part = true;
-                if let Ok((_, _, mut route, _)) = route_query.get_mut(*child) {
+                if let Ok((_, _, mut route, _)) = route_query.get_mut(child) {
                     is_path_part = router.path.len() > 0 && (route.name == router.path[0]);
                 }
-                if let Ok((entity, mut control, _, bindable)) = route_query.get_mut(*child) {
+                if let Ok((entity, mut control, _, bindable)) = route_query.get_mut(child) {
                     control.is_visible = is_path_part;
                     if is_path_part {
                         commands.trigger_targets(ShowView { params: router.params.clone() }, entity);
@@ -177,7 +177,7 @@ pub fn update_route(
             }
         }
         
-        for ev in evs.get_reader().read(&evs) {
+        for ev in evs.get_cursor().read(&evs) {
             let params = ev.params.clone();//.iter().map(|(key, value)| (key.clone(), reflect_to_json(value.as_reflect()).to_string())).collect();
 
             if router.path != ev.path || router.params != params {

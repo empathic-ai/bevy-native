@@ -1,14 +1,14 @@
 mod routing;
-use bevy::ecs::world::Command;
+//use bevy::ecs::world::Command;
 pub use routing::*;
 
 mod main_js;
 
 use flux::prelude::*;
 
-use bevy::utils::HashMap;
+//use std::collections::HashMap;
 
-use bevy::hierarchy::HierarchyEvent;
+//use bevy::hierarchy::HierarchyEvent;
 use bevy::prelude::*;
 
 use bevy::ecs::event::{Event, EventWriter};
@@ -115,7 +115,7 @@ pub fn list_change_detection(
         Entity,
         Ref<Control>,
         &Container,
-        Option<Ref<Parent>>,
+        Option<Ref<ChildOf>>,
         Option<Ref<VList>>,
         Option<Ref<HList>>,
         Option<Ref<GridList>>
@@ -281,7 +281,7 @@ pub fn base_change_detection(
     query: Query<(
         Entity,
         Ref<Control>,
-        Option<Ref<Parent>>,
+        Option<Ref<ChildOf>>,
         Option<Ref<HScroll>>,
         Option<Ref<VScroll>>,
         Option<Ref<BackgroundColor>>,
@@ -808,32 +808,24 @@ pub fn base_change_detection(
 //    return web::get_page_origin().unwrap()
 //}
 
-pub fn update_heirarchy(mut ev_hierarchy: EventReader<HierarchyEvent>,
-    _query: Query<(Entity, &Control)>,
+pub fn update_heirarchy(//mut ev_hierarchy: EventReader<HierarchyEvent>,
+    trigger: Trigger<OnAdd, ChildOf>,
+    query: Query<(&ChildOf)>,
     parents_query: Query<(Entity, &Children), Changed<Children>>,
 ) {
-    for ev in ev_hierarchy.read() {
-        match ev {
-            HierarchyEvent::ChildAdded { child, parent } => {
-                let child_element = add_or_get_element(*child, None);
-
-                let _child_id = child.to_bits().to_string();
-                let _parent_id = parent.to_bits().to_string();
-                //console::info!(format!("Parent of {_child_id} changed to {_parent_id}!"));
+    let child = trigger.target();
+    let parent = query.get(trigger.target()).unwrap().parent();
     
-                //if let Some(child) = result {
-                //let child = result.unwrap();
-                let parent_element = add_or_get_element(*parent, None);
-                let _  = parent_element.append_child(&child_element);
-            }
-            HierarchyEvent::ChildRemoved { child, parent } => {
+    let child_element = add_or_get_element(child, None);
 
-            }
-            HierarchyEvent::ChildMoved { child, previous_parent, new_parent } => {
+    let _child_id = child.to_bits().to_string();
+    let _parent_id = parent.to_bits().to_string();
+    //console::info!(format!("Parent of {_child_id} changed to {_parent_id}!"));
 
-            }
-        }
-    }
+    //if let Some(child) = result {
+    //let child = result.unwrap();
+    let parent_element = add_or_get_element(parent, None);
+    let _  = parent_element.append_child(&child_element);
     /*
     for (parent_entity, children) in &parents_query {
         for child in children.iter() {

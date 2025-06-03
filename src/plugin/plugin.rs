@@ -1,4 +1,4 @@
-use bevy::{ecs::schedule::NodeConfigs, prelude::*};
+use bevy::{ecs::schedule::ScheduleConfigs, prelude::*};
 use flux::prelude::*;
 use crate::*;
 
@@ -17,9 +17,9 @@ impl Plugin for BevyNative {
         app
         .register_component_as::<dyn BindableList, AutoBindableList>()
         //.register_component_as::<dyn Bindable, AutoBindable>()
-        .register_component_as::<dyn Bindable, UsageView>()
-        .register_component_as::<dyn Bindable, InteractState>()
-        .register_component_as::<dyn Bindable, SearchInput>()
+        //.register_component_as::<dyn Bindable, UsageView>()
+        //.register_component_as::<dyn Bindable, InteractState>()
+        //.register_component_as::<dyn Bindable, SearchInput>()
         //.add_plugins((bevy::MinimalPlugins, bevy::hierarchy::HierarchyPlugin))
         .insert_resource(flux::prelude::BindingsConfig::default())
         //.insert_resource(client)
@@ -42,20 +42,20 @@ impl Plugin for BevyNative {
             (
                 base_change_detection,
                 list_change_detection,
-                update_heirarchy,
+                //update_heirarchy,
                 event_detection,
                 //propogate_forms,
                 //process_form_on_submit,
                 //process_responsive_elements,
                 remove_detection
             ).chain()
-        )
+        ).add_observer(update_heirarchy)
         //.add_systems(PostStartup, route_detection)
         .add_systems(Startup, setup);
     }
 }
 
-pub fn render_ui() -> NodeConfigs<Box<dyn System<In = (), Out = ()>>> {
+pub fn render_ui() -> impl IntoScheduleConfigs<Box<dyn System<In = (), Out = Result<(), BevyError>>>, ()> {
     (
         update_route,
         route_detection,
@@ -64,12 +64,14 @@ pub fn render_ui() -> NodeConfigs<Box<dyn System<In = (), Out = ()>>> {
  
         base_change_detection,
         list_change_detection,
-        update_heirarchy,
+        
+        //update_heirarchy,
 
         //taby_client::network_detection,
         //update_route,
         //route_detection,
         //on_show_detection,
+  
         event_detection,
         base_change_detection,
         list_change_detection,

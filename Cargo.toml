@@ -7,7 +7,7 @@ edition = "2024"
 default = ["native_ui", "bevy"]
 bevy = ["dep:bevy", "flux/bevy"]
 native_ui = []
-std = ["bevy?/bevy_ui", "bevy?/bevy_asset"]
+std = ["flux/bevy_ui", "bevy?/bevy_ui", "bevy?/bevy_asset"]
 
 [dependencies]
 serde_json = "1.0"
