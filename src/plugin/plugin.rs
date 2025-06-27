@@ -1,4 +1,6 @@
 use bevy::{ecs::schedule::ScheduleConfigs, prelude::*};
+#[cfg(feature = "native_ui")]
+use bevy_simple_subsecond_system::SimpleSubsecondSystemSet;
 use flux::prelude::*;
 use crate::*;
 
@@ -9,11 +11,16 @@ use bevy_trait_query::RegisterExt;
 
 pub struct BevyNative;
 
+#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
+pub enum UISets {
+    RenderUI,
+}
 
 impl Plugin for BevyNative {
     fn build(&self, app: &mut App) {
 
         #[cfg(feature = "native_ui")]
+        #[cfg(target_arch = "wasm32")]
         app
         .register_component_as::<dyn BindableList, AutoBindableList>()
         //.register_component_as::<dyn Bindable, AutoBindable>()
@@ -34,11 +41,16 @@ impl Plugin for BevyNative {
         .add_event::<ClickEvent>()
         .add_event::<SubmitEvent>()
         .add_event::<SnapScrollY>()
+        .configure_sets(PreUpdate, (
+            UISets::RenderUI.after(SimpleSubsecondSystemSet::UpdateFunctionPtrs),
+        ))
         .add_systems(PreUpdate,
+            render_ui().in_set(UISets::RenderUI)
+        )
+        .add_systems(Update,
             render_ui()
-        ).add_systems(Update,
-            render_ui()
-        ).add_systems(PostUpdate,
+        )
+        .add_systems(PostUpdate,
             (
                 base_change_detection,
                 list_change_detection,

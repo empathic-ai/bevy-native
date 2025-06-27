@@ -281,6 +281,7 @@ pub fn base_change_detection(
     query: Query<(
         Entity,
         Ref<Control>,
+        Option<Ref<Transform>>,
         Option<Ref<ChildOf>>,
         Option<Ref<HScroll>>,
         Option<Ref<VScroll>>,
@@ -296,6 +297,7 @@ pub fn base_change_detection(
     for (
         entity,
         control,
+        transform,
         parent,
         hscroll,
         vscroll,
@@ -307,12 +309,15 @@ pub fn base_change_detection(
         button
     ) in &query
     {
-        //if changed_control.is_some_and(|x| x) && control.is_visible {
-        //    let id = entity.to_bits().to_string();
-        //    log(format!("Control with ID {id} is visible!"));
-        //}
+        /*
+        if control.is_changed() {
+            let id = entity.to_bits().to_string();
+            info!("Control with ID {id} was changed! Re-rendering.");
+        }
+        */
 
         if control.is_changed()
+            || transform.as_ref().is_some_and(|x| x.is_changed())
             || parent.as_ref().is_some_and(|x| x.is_changed())
             || image_rect.as_ref().is_some_and(|x| x.is_changed())
             || BLabel.as_ref().is_some_and(|x| x.is_changed())
@@ -334,6 +339,8 @@ pub fn base_change_detection(
             let mut element_type = "div".to_string();
             let mut attribute_dictionary = HashMap::<String, String>::new();
             let mut style_dictionary = HashMap::<String, String>::new();
+            let mut transform_dictionary = HashMap::<String, String>::new();
+
             let mut text_content = "".to_string();
             let mut use_pointer = false;
 
@@ -353,6 +360,15 @@ pub fn base_change_detection(
                         is_parent_container = true;
                     }
                 }
+            }
+
+            if let Some(transform) = transform.as_ref() {
+                let angle_z = (transform.rotation.to_euler(EulerRot::XYZ).2 * 180.0);
+                //info!("Angle Z: {}", angle_z);
+                transform_dictionary.insert("rotateZ".to_string(), format!("({}deg);", angle_z));
+
+                let scale = transform.scale;
+                transform_dictionary.insert("scale".to_string(), format!("({}, {})", scale.x, scale.y));
             }
 
             if let Some(z_index) = control.z_index {
@@ -434,16 +450,13 @@ pub fn base_change_detection(
                 style_dictionary.insert("width".to_string(), "auto".to_string());
             }
 
-            if control.ExpandHeight {
+            if control.expand_height {
                 style_dictionary.insert("height".to_string(), "100%".to_string());
                 style_dictionary.insert("top".to_string(), "0".to_string());
                 style_dictionary.insert("bottom".to_string(), "0".to_string());
             } else {
                 style_dictionary.insert("height".to_string(), "auto".to_string());
             }
-
-            let scale = control.Scale;
-            style_dictionary.insert("scale".to_string(), scale.to_string());
 
             let left = control.BorderRadius.x;
             let top = control.BorderRadius.y;
@@ -540,9 +553,9 @@ pub fn base_change_detection(
                     let pivot = control.Pivot.vector_from_anchor();
                     let pivot_x = &(-pivot.x * 100.0).to_string();
                     let pivot_y = &(-pivot.y * 100.0).to_string();
-                    style_dictionary.insert(
-                        "transform".to_string(),
-                        "translate(".to_string() + pivot_x + "%, " + pivot_y + "%)",
+                    transform_dictionary.insert(
+                        "translate".to_string(),
+                        "(".to_string() + pivot_x + "%, " + pivot_y + "%)",
                     );
 
                     let top = &(pivot.x * 100.0).to_string();
@@ -699,7 +712,8 @@ pub fn base_change_detection(
 
                     style_dictionary.insert("text-shadow".to_string(), format!(r#"1px 1px 10px {color}, {depth_string} 1px 18px 6px rgba(16,16,16,0.4), 1px 22px 10px rgba(16,16,16,0.2), 1px 25px 35px rgba(16,16,16,0.2), 1px 30px 60px rgba(16,16,16,0.75)"#).to_string());
 
-                    style_dictionary.insert("transform".to_string(), "perspective(1000px) rotateX(25deg)".to_string());
+                    transform_dictionary.insert("perspective".to_string(), "(1000px)".to_string());
+                    transform_dictionary.insert("rotateX".to_string(), "(25deg)".to_string());
                 }
 
                 if let Some(line_height) = b_label.line_height {
@@ -757,10 +771,27 @@ pub fn base_change_detection(
 
             style_dictionary.insert("white-space".to_string(), "pre-wrap".to_string());
 
+            let mut transform_style = "".to_string();
+
+            if let Some(value) = transform_dictionary.remove("translate") {
+                transform_style += &("translate".to_string() + &value + " ");
+            }
+            
+            if let Some(value) = transform_dictionary.remove("scale") {
+                transform_style += &("scale".to_string() + &value + " ");
+            }
+
+            for (key, value) in transform_dictionary {
+                transform_style += &(key + &value + " ");
+            }
+
+            style_dictionary.insert("transform".to_string(), transform_style.to_string());
+
             let element = add_or_get_element(entity, Some(element_type));
 
             if is_number {
-                unsafe { main_js::phoneNumber(element.clone()); };
+                // TODO: Rework
+                //unsafe { main_js::phoneNumber(element.clone()); };
             }
 
             for (key, val) in attribute_dictionary {
