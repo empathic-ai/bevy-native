@@ -28,7 +28,6 @@ impl Plugin for BevyNative {
         //.register_component_as::<dyn Bindable, InteractState>()
         //.register_component_as::<dyn Bindable, SearchInput>()
         //.add_plugins((bevy::MinimalPlugins, bevy::hierarchy::HierarchyPlugin))
-        .insert_resource(flux::prelude::BindingsConfig::default())
         //.insert_resource(client)
         .add_event::<RouteChange>()
         .add_event::<LogoutEvent>()
