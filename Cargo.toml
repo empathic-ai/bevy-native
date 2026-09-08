@@ -6,7 +6,7 @@ edition = "2024"
 [features]
 default = ["native_ui", "bevy"]
 bevy = ["dep:bevy", "flux/bevy"]
-native_ui = []
+native_ui = ["bevy"]
 std = ["flux/bevy_ui", "bevy?/bevy_ui"]
 bevy_ui = ["bevy?/bevy_asset"]
 
@@ -43,6 +43,7 @@ features = [
     "Location",
     "HtmlDivElement",
     'HtmlDocument',
+    'CssStyleDeclaration',
     'Headers',
     'Request',
     'RequestInit',

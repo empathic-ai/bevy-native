@@ -13,20 +13,20 @@ use bevy::prelude::*;
 
 use bevy::ecs::event::{Event, EventWriter};
 
-use wasm_bindgen::{prelude::*, JsCast};
+use wasm_bindgen::{JsCast, prelude::*};
 
-use web_sys::{Document, Element, HtmlIFrameElement, HtmlInputElement, Window};
+use web_sys::{Document, Element, HtmlElement, HtmlIFrameElement, HtmlInputElement, Window};
 
 use lazy_static::lazy_static;
 
-use web_sys::HtmlDivElement;
-use std::sync::mpsc::Receiver;
+use base64::{Engine as _, engine::general_purpose};
 use std::sync::Mutex;
+use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
-use base64::{engine::general_purpose, Engine as _};
+use web_sys::HtmlDivElement;
 
-use web_sys::js_sys;
 use common::prelude::*;
+use web_sys::js_sys::{self, Array, Reflect};
 
 //use bevy_cobweb::prelude::*;
 
@@ -39,10 +39,11 @@ lazy_static! {
     };
 }
 
+use regex::Regex;
 use wasm_bindgen::prelude::*;
 use web_sys::window;
-use regex::Regex;
 
+// To search in web app: //*[@bevy-native-id='4294967567']
 const BEVY_NATIVE_ID_ATTRIBUTE: &str = "bevy-native-id";
 
 pub fn is_mobile() -> bool {
@@ -53,7 +54,7 @@ pub fn is_mobile() -> bool {
     let regex_pattern = r"(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino|1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-";
 
     let re = Regex::new(regex_pattern).unwrap();
-    re.is_match(&user_agent)// || re.is_match(&vendor)
+    re.is_match(&user_agent) // || re.is_match(&vendor)
 }
 
 pub fn setup() {
@@ -64,7 +65,9 @@ pub fn setup() {
         route();
     }) as Box<dyn FnMut()>);
 
-    window.add_event_listener_with_callback("popstate", closure.as_ref().unchecked_ref()).unwrap();
+    window
+        .add_event_listener_with_callback("popstate", closure.as_ref().unchecked_ref())
+        .unwrap();
     closure.forget();
 
     route();
@@ -118,18 +121,10 @@ pub fn list_change_detection(
         Option<Ref<ChildOf>>,
         Option<Ref<VList>>,
         Option<Ref<HList>>,
-        Option<Ref<GridList>>
-    )>) {
-    for (
-        entity,
-        control,
-        _contianer,
-        parent,
-        vlist,
-        hlist,
-        grid_list
-    ) in &query
-    {
+        Option<Ref<GridList>>,
+    )>,
+) {
+    for (entity, control, _contianer, parent, vlist, hlist, grid_list) in &query {
         let mut style_dictionary = HashMap::<String, String>::new();
 
         if control.is_changed()
@@ -144,17 +139,20 @@ pub fn list_change_detection(
                 style_dictionary.insert("flex-direction".to_string(), "column".to_string());
                 match vlist.anchor {
                     Anchor::UpperLeft => {
-                        style_dictionary.insert("justify-content".to_string(), "safe start".to_string());
+                        style_dictionary
+                            .insert("justify-content".to_string(), "safe start".to_string());
                         style_dictionary.insert("align-content".to_string(), "start".to_string());
                         style_dictionary.insert("align-items".to_string(), "start".to_string());
                     }
                     Anchor::UpperCenter => {
-                        style_dictionary.insert("justify-content".to_string(), "safe start".to_string());
+                        style_dictionary
+                            .insert("justify-content".to_string(), "safe start".to_string());
                         style_dictionary.insert("align-content".to_string(), "center".to_string());
                         style_dictionary.insert("align-items".to_string(), "center".to_string());
                     }
                     Anchor::MiddleLeft => {
-                        style_dictionary.insert("justify-content".to_string(), "safe center".to_string());
+                        style_dictionary
+                            .insert("justify-content".to_string(), "safe center".to_string());
                         style_dictionary.insert("align-content".to_string(), "start".to_string());
                         style_dictionary.insert("align-items".to_string(), "start".to_string());
                     }
@@ -165,10 +163,11 @@ pub fn list_change_detection(
                         style_dictionary.insert("align-items".to_string(), "center".to_string());
                     }
                     Anchor::LowerCenter => {
-                        style_dictionary.insert("justify-content".to_string(), "safe end".to_string());
+                        style_dictionary
+                            .insert("justify-content".to_string(), "safe end".to_string());
                         style_dictionary.insert("align-content".to_string(), "center".to_string());
                         style_dictionary.insert("align-items".to_string(), "center".to_string());
-                    },
+                    }
                     Anchor::LowerRight => {
                         style_dictionary
                             .insert("justify-content".to_string(), "safe end".to_string());
@@ -218,18 +217,18 @@ pub fn list_change_detection(
                         style_dictionary.insert("align-items".to_string(), "center".to_string());
                     }
                     Anchor::MiddleCenter => {
-                        style_dictionary.insert("justify-content".to_string(), "center".to_string());
+                        style_dictionary
+                            .insert("justify-content".to_string(), "center".to_string());
                         style_dictionary.insert("align-content".to_string(), "center".to_string());
                         style_dictionary.insert("align-items".to_string(), "center".to_string());
-                    },
+                    }
                     Anchor::MiddleRight => {
                         style_dictionary.insert("justify-content".to_string(), "end".to_string());
                         style_dictionary.insert("align-content".to_string(), "center".to_string());
                         style_dictionary.insert("align-items".to_string(), "center".to_string());
-                    },
+                    }
                     Anchor::LowerLeft => {
-                        style_dictionary
-                            .insert("justify-content".to_string(), "start".to_string());
+                        style_dictionary.insert("justify-content".to_string(), "start".to_string());
                         style_dictionary.insert("align-content".to_string(), "end".to_string());
                         style_dictionary.insert("align-items".to_string(), "end".to_string());
                     }
@@ -290,7 +289,8 @@ pub fn base_change_detection(
         Option<Ref<TextLabel>>,
         Option<Ref<InputField>>,
         Option<Ref<Shadow>>,
-        Option<Ref<Button>>
+        Option<Ref<Button>>,
+        Option<Ref<Name>>,
     )>,
     parent_container_query: Query<(&Container, Option<&VList>, Option<&HList>)>,
 ) {
@@ -306,7 +306,8 @@ pub fn base_change_detection(
         BLabel,
         input_field,
         shadow,
-        button
+        button,
+        name
     ) in &query
     {
         /*
@@ -323,9 +324,10 @@ pub fn base_change_detection(
             || BLabel.as_ref().is_some_and(|x| x.is_changed())
             || input_field.as_ref().is_some_and(|x| x.is_changed())
             || background_color.as_ref().is_some_and(|x| x.is_changed())
+            || name.as_ref().is_some_and(|x| x.is_changed())
         {
             // Used for debugging
-            /* 
+            /*
             let id = entity.to_bits().to_string();
             let was_control_changed = changed_control.is_some_and(|x| x);
             let was_parent_changed = changed_parent.is_some_and(|x| x);
@@ -336,7 +338,7 @@ pub fn base_change_detection(
             */
 
             let mut is_number = false;
-            let mut element_type = "div".to_string();
+            let mut tag_name = "div".to_string();
             let mut attribute_dictionary = HashMap::<String, String>::new();
             let mut style_dictionary = HashMap::<String, String>::new();
             let mut transform_dictionary = HashMap::<String, String>::new();
@@ -351,7 +353,7 @@ pub fn base_change_detection(
             if !control.ignore_layout {
                 if parent.is_some() {
                     let parent = parent.as_ref().unwrap();
-    
+
                     let parent_container = parent_container_query.get(parent.get());
                     if parent_container.is_ok() {
                         let (_container, _vlist, _hlist) = parent_container.unwrap();
@@ -362,13 +364,18 @@ pub fn base_change_detection(
                 }
             }
 
+            if let Some(name) = name.as_ref() {
+                attribute_dictionary.insert("name".to_string(), name.to_string());
+            }
+
             if let Some(transform) = transform.as_ref() {
                 let angle_z = (transform.rotation.to_euler(EulerRot::XYZ).2 * 180.0);
                 //info!("Angle Z: {}", angle_z);
                 transform_dictionary.insert("rotateZ".to_string(), format!("({}deg);", angle_z));
 
                 let scale = transform.scale;
-                transform_dictionary.insert("scale".to_string(), format!("({}, {})", scale.x, scale.y));
+                transform_dictionary
+                    .insert("scale".to_string(), format!("({}, {})", scale.x, scale.y));
             }
 
             if let Some(z_index) = control.z_index {
@@ -393,10 +400,14 @@ pub fn base_change_detection(
             }
 
             if let Some(input_field) = input_field.as_ref() {
-                element_type = "input".to_string();
+                tag_name = "input".to_string();
                 style_dictionary.insert("background".to_string(), "none".to_string());
-                style_dictionary.insert("font-size".to_string(), input_field.font_size.to_string() + "px");
+                style_dictionary.insert(
+                    "font-size".to_string(),
+                    input_field.font_size.to_string() + "px",
+                );
 
+                attribute_dictionary.insert("name".to_string(), "0".to_string());
                 attribute_dictionary.insert("autocomplete".to_string(), "off".to_string());
                 attribute_dictionary
                     .insert("placeholder".to_string(), input_field.placeholder.clone());
@@ -405,12 +416,10 @@ pub fn base_change_detection(
                 use_pointer = true;
 
                 match input_field.input_type {
-                    InputType::Default => {
-
-                    }
+                    InputType::Default => {}
                     InputType::Password => {
                         attribute_dictionary.insert("type".to_string(), "password".to_string());
-                    },
+                    }
                     InputType::PhoneNumber => {
                         is_number = true;
                         //attribute_dictionary.insert("type".to_string(), "number".to_string());
@@ -420,9 +429,12 @@ pub fn base_change_detection(
 
             if button.is_some() {
                 let _image_button = button.unwrap();
-                element_type = "button".to_string();
+                tag_name = "button".to_string();
 
-                style_dictionary.insert("-webkit-tap-highlight-color".to_string(), "transparent".to_string());
+                style_dictionary.insert(
+                    "-webkit-tap-highlight-color".to_string(),
+                    "transparent".to_string(),
+                );
                 style_dictionary.insert("background".to_string(), "none".to_string());
                 style_dictionary.insert("cursor".to_string(), "pointer".to_string());
                 use_pointer = true;
@@ -430,15 +442,14 @@ pub fn base_change_detection(
 
             if background_color.is_some() {
                 let background_color = background_color.unwrap();
-                let r = (background_color.0.to_srgba().red * 256.0) as u8;//.to_string();
-                let g = (background_color.0.to_srgba().green * 256.0) as u8;//.to_string();
-                let b = (background_color.0.to_srgba().blue * 256.0) as u8;//.to_string();
-                let a = (background_color.0.to_srgba().alpha * 256.0) as u8;//.to_string();
+                let r = (background_color.0.to_srgba().red * 256.0) as u8; //.to_string();
+                let g = (background_color.0.to_srgba().green * 256.0) as u8; //.to_string();
+                let b = (background_color.0.to_srgba().blue * 256.0) as u8; //.to_string();
+                let a = (background_color.0.to_srgba().alpha * 256.0) as u8; //.to_string();
                 let hex_color = format!("#{:02X}{:02X}{:02X}{:02X}", r, g, b, a);
                 style_dictionary.insert(
                     "background".to_string(),
-                    hex_color
-                   // "rgba(".to_string() + r + ", " + g + ", " + b + ", " + a + ")",
+                    hex_color, // "rgba(".to_string() + r + ", " + g + ", " + b + ", " + a + ")",
                 );
             }
 
@@ -486,43 +497,63 @@ pub fn base_change_detection(
                     "filter".to_string(),
                     "brightness(".to_string() + brightness + ")",
                 );
-                
+
                 if image_rect.multiply {
                     style_dictionary.insert("mix-blend-mode".to_string(), "multiply".to_string());
                 }
                 if image_rect.is_nine_slice {
-                    element_type = "div".to_string();
+                    tag_name = "div".to_string();
 
                     let x = image_rect.border_image_slice.x;
                     let y = image_rect.border_image_slice.y;
                     let z = image_rect.border_image_slice.z;
                     let w = image_rect.border_image_slice.w;
-                    style_dictionary.insert("border-image-slice".to_string(), format!("{x} {y} {z} {w} fill").to_string());
+                    style_dictionary.insert(
+                        "border-image-slice".to_string(),
+                        format!("{x} {y} {z} {w} fill").to_string(),
+                    );
                     let x = image_rect.border_image_width.x;
                     let y = image_rect.border_image_width.y;
                     let z = image_rect.border_image_width.z;
                     let w = image_rect.border_image_width.w;
-                    style_dictionary.insert("border-image-width".to_string(), format!("{x}px {y}px {z}px {w}px").to_string());
-                    style_dictionary.insert("border-image-outset".to_string(), "0px 0px 0px 0px".to_string());
+                    style_dictionary.insert(
+                        "border-image-width".to_string(),
+                        format!("{x}px {y}px {z}px {w}px").to_string(),
+                    );
+                    style_dictionary.insert(
+                        "border-image-outset".to_string(),
+                        "0px 0px 0px 0px".to_string(),
+                    );
                     let image = image_rect.image.clone();
-                    style_dictionary.insert("border-image-source".to_string(), format!("url({image})"));
-                    style_dictionary.insert("border-image-repeat".to_string(), "stretch stretch".to_string());
+                    style_dictionary
+                        .insert("border-image-source".to_string(), format!("url({image})"));
+                    style_dictionary.insert(
+                        "border-image-repeat".to_string(),
+                        "stretch stretch".to_string(),
+                    );
                     style_dictionary.insert("border-style".to_string(), "solid".to_string());
                     style_dictionary.remove("border");
                 } else {
-                    element_type = "div".to_string();
+                    tag_name = "div".to_string();
+
                     //attribute_dictionary.insert("src".to_string(), image_rect.image.clone());
                     let mut image = image_rect.image.clone();
                     style_dictionary.remove("background");
 
-                    if image_rect.data.len() > 0 {// image.is_empty() {
+                    if image_rect.data.len() > 0 {
+                        // image.is_empty() {
                         let b64 = general_purpose::STANDARD.encode(image_rect.data.clone());
-                        image = format!("data:image/jpeg;base64,@Convert.ToBase64String(electedOfficial.Picture)");
+                        image = format!(
+                            "data:image/jpeg;base64,@Convert.ToBase64String(electedOfficial.Picture)"
+                        );
                     }
-                    style_dictionary.insert("background-image".to_string(), format!("url('{image}')"));
-                    style_dictionary.insert("background-repeat".to_string(), "no-repeat".to_string());
+                    style_dictionary
+                        .insert("background-image".to_string(), format!("url('{image}')"));
+                    style_dictionary
+                        .insert("background-repeat".to_string(), "no-repeat".to_string());
                     style_dictionary.insert("background-size".to_string(), "contain".to_string());
-                    style_dictionary.insert("background-position".to_string(), "center".to_string());
+                    style_dictionary
+                        .insert("background-position".to_string(), "center".to_string());
                 }
                 if let Some(aspect_ratio) = image_rect.aspect_ratio.as_ref() {
                     style_dictionary.insert("min-width".to_string(), "100%".to_string());
@@ -569,14 +600,9 @@ pub fn base_change_detection(
                     let left_pivot = &(control.fixed_width / 2.0).to_string();
                     style_dictionary.insert(
                         "left".to_string(),
-                        "calc(".to_string()
-                            + left_margin
-                            + "% + "
-                            + left_pos
-                            + "px)"
-                            //+ "px - "
-                            //+ left_pivot
-                            //+ "px)",
+                        "calc(".to_string() + left_margin + "% + " + left_pos + "px)", //+ "px - "
+                                                                                       //+ left_pivot
+                                                                                       //+ "px)",
                     );
 
                     let top_margin = &0.to_string();
@@ -584,14 +610,9 @@ pub fn base_change_detection(
                     let top_pivot = &(control.fixed_height / 2.0).to_string();
                     style_dictionary.insert(
                         "top".to_string(),
-                        "calc(".to_string()
-                            + top_margin
-                            + "% + "
-                            + top_pos
-                            + "px)"
-                            //+ "px - "
-                            //+ top_pivot
-                            //+ "px)",
+                        "calc(".to_string() + top_margin + "% + " + top_pos + "px)", //+ "px - "
+                                                                                     //+ top_pivot
+                                                                                     //+ "px)",
                     );
                 }
             }
@@ -609,16 +630,25 @@ pub fn base_change_detection(
             if control.FitWidth {
                 style_dictionary.insert("width".to_string(), "fit-content".to_string());
             } else if control.fixed_width > -1.0 {
-                style_dictionary.insert("width".to_string(), control.fixed_width.to_string() + "px");
-                style_dictionary.insert("min-width".to_string(), control.fixed_width.to_string() + "px");
+                style_dictionary
+                    .insert("width".to_string(), control.fixed_width.to_string() + "px");
+                style_dictionary.insert(
+                    "min-width".to_string(),
+                    control.fixed_width.to_string() + "px",
+                );
             }
 
             if control.FitHeight {
                 style_dictionary.insert("height".to_string(), "fit-content".to_string());
             } else if control.fixed_height > -1.0 {
-                style_dictionary.insert("height".to_string(), control.fixed_height.to_string() + "px");
-                style_dictionary
-                    .insert("min-height".to_string(), control.fixed_height.to_string() + "px");
+                style_dictionary.insert(
+                    "height".to_string(),
+                    control.fixed_height.to_string() + "px",
+                );
+                style_dictionary.insert(
+                    "min-height".to_string(),
+                    control.fixed_height.to_string() + "px",
+                );
             }
 
             let left = control.Padding.x;
@@ -632,17 +662,23 @@ pub fn base_change_detection(
             );
 
             if let Some(b_label) = BLabel.as_ref() {
-                element_type = "p".to_string();
+                tag_name = "p".to_string();
                 text_content = b_label.text.to_string();
                 //style_dictionary.insert("overflow".to_string(), "unset".to_string());
                 style_dictionary.insert("font-family".to_string(), b_label.font.clone());
 
-                style_dictionary.insert("font-size".to_string(), b_label.font_size.to_string() + "px");
+                style_dictionary.insert(
+                    "font-size".to_string(),
+                    b_label.font_size.to_string() + "px",
+                );
                 style_dictionary.insert("color".to_string(), get_css_string(b_label.color));
-                
+
                 if b_label.is_shadow {
-                    style_dictionary.insert("text-shadow".to_string(), "2px 2px 15px rgba(0,0,0,.4)".to_string());
-                }                
+                    style_dictionary.insert(
+                        "text-shadow".to_string(),
+                        "2px 2px 15px rgba(0,0,0,.4)".to_string(),
+                    );
+                }
 
                 let alignment: String;
                 match b_label.alignment {
@@ -664,20 +700,27 @@ pub fn base_change_detection(
 
                 // Margin override for evil fonts
                 if b_label.font == "Mogra".to_string() {
-                    let offset = 0.0;//BLabel.FontSize / 6.0;
-                    style_dictionary.insert("margin".to_string(), format!("0px 0px -{offset}px 0px").to_string());
+                    let offset = 0.0; //BLabel.FontSize / 6.0;
+                    style_dictionary.insert(
+                        "margin".to_string(),
+                        format!("0px 0px -{offset}px 0px").to_string(),
+                    );
                 } else {
                     style_dictionary.insert("margin".to_string(), 0.to_string());
                 }
 
                 if b_label.is_single_line {
                     if !control.expand_width {
-                        style_dictionary.insert("box-sizing".to_string(), "content-box".to_string());
+                        style_dictionary
+                            .insert("box-sizing".to_string(), "content-box".to_string());
                         style_dictionary.insert("word-break".to_string(), "normal".to_string());
                         style_dictionary.insert("width".to_string(), "max-content".to_string());
                         style_dictionary.insert("flex-shrink".to_string(), "0".to_string());
                     }
-                    style_dictionary.insert("line-height".to_string(), b_label.font_size.to_string() + "px");
+                    style_dictionary.insert(
+                        "line-height".to_string(),
+                        b_label.font_size.to_string() + "px",
+                    );
                 }
 
                 if b_label.is_italic {
@@ -687,7 +730,10 @@ pub fn base_change_detection(
                     style_dictionary.insert("font-weight".to_string(), "bold".to_string());
                 } else {
                     let font_weight = b_label.font_weight;
-                    style_dictionary.insert("font-weight".to_string(), format!("{font_weight}").to_string());
+                    style_dictionary.insert(
+                        "font-weight".to_string(),
+                        format!("{font_weight}").to_string(),
+                    );
                 }
 
                 if b_label.is_3d {
@@ -702,9 +748,9 @@ pub fn base_change_detection(
 
                     let mut stroke_string = "".to_string();
                     //let depth = (BLabel.font_size / 5.0) as i32;
-                    let max_depth = depth+10;
+                    let max_depth = depth + 10;
                     //stroke_string += &format!("10px {max_depth}px 0 #000, -10px {max_depth}px 0 #000, -10px -10px 0 #000, 10px -10px 0 #000");
-                    
+
                     //for i in 0..3 {
                     //    let depth_val = i + 1;
                     //    depth_string += &format!("1px {depth_val}px 1px {color}, ");
@@ -717,7 +763,10 @@ pub fn base_change_detection(
                 }
 
                 if let Some(line_height) = b_label.line_height {
-                    style_dictionary.insert("line-height".to_string(), format!("{line_height}px").to_string());
+                    style_dictionary.insert(
+                        "line-height".to_string(),
+                        format!("{line_height}px").to_string(),
+                    );
                 }
             }
 
@@ -727,14 +776,8 @@ pub fn base_change_detection(
                     "border-color".to_string(),
                     "rgba(223,225,229,0)".to_string(),
                 );
-                style_dictionary.insert(
-                    "-webkit-appearance".to_string(),
-                    "none".to_string(),
-                );
-                style_dictionary.insert(
-                    "-webkit-appearance".to_string(),
-                    "none".to_string(),
-                );
+                style_dictionary.insert("-webkit-appearance".to_string(), "none".to_string());
+                style_dictionary.insert("-webkit-appearance".to_string(), "none".to_string());
                 style_dictionary.insert(
                     "-webkit-box-shadow".to_string(),
                     "0 1px 10px rgb(32 33 36 / 15%) !important".to_string(),
@@ -743,7 +786,7 @@ pub fn base_change_detection(
                     "box-shadow".to_string(),
                     "0 1px 10px rgb(32 33 36 / 15%) !important".to_string(),
                 );
-                
+
                 // TODO: Add back in as an optional attribute
                 //style_dictionary.insert(
                 //    "filter".to_string(),
@@ -776,7 +819,7 @@ pub fn base_change_detection(
             if let Some(value) = transform_dictionary.remove("translate") {
                 transform_style += &("translate".to_string() + &value + " ");
             }
-            
+
             if let Some(value) = transform_dictionary.remove("scale") {
                 transform_style += &("scale".to_string() + &value + " ");
             }
@@ -787,7 +830,7 @@ pub fn base_change_detection(
 
             style_dictionary.insert("transform".to_string(), transform_style.to_string());
 
-            let element = add_or_get_element(entity, Some(element_type));
+            let element = add_or_get_element(entity, Some(tag_name));
 
             if is_number {
                 // TODO: Rework
@@ -805,7 +848,7 @@ pub fn base_change_detection(
             }
 
             //if let Ok(input_element) = element.clone().dyn_into::<HtmlInputElement>() {
-                //input_element.set_value(&text_content);
+            //input_element.set_value(&text_content);
             //}
 
             // Add hook to button click event
@@ -816,19 +859,21 @@ pub fn base_change_detection(
                 let f = Closure::wrap(Box::new(move |ev: web_sys::KeyboardEvent| {
                     if ev.key() == "Enter" {
                         //console::info!("Enter key pressed!");
-                        let _  = e.set_attribute("was_submitted", &true.to_string());
+                        let _ = e.set_attribute("was_submitted", &true.to_string());
                     }
                 }) as Box<dyn FnMut(web_sys::KeyboardEvent)>);
 
-                let _  = element.add_event_listener_with_callback("keypress", f.as_ref().unchecked_ref());
+                let _ = element
+                    .add_event_listener_with_callback("keypress", f.as_ref().unchecked_ref());
                 f.forget();
 
                 let e = element.clone();
                 let f = Closure::wrap(Box::new(move |_ev: web_sys::Event| {
-                    let _  = e.set_attribute("was_input", &true.to_string());
+                    let _ = e.set_attribute("was_input", &true.to_string());
                 }) as Box<dyn FnMut(web_sys::Event)>);
 
-                let _  = element.add_event_listener_with_callback("input", f.as_ref().unchecked_ref());
+                let _ =
+                    element.add_event_listener_with_callback("input", f.as_ref().unchecked_ref());
                 f.forget();
             }
         }
@@ -839,14 +884,15 @@ pub fn base_change_detection(
 //    return web::get_page_origin().unwrap()
 //}
 
-pub fn update_heirarchy(//mut ev_hierarchy: EventReader<HierarchyEvent>,
+pub fn update_heirarchy(
+    //mut ev_hierarchy: EventReader<HierarchyEvent>,
     trigger: Trigger<OnAdd, ChildOf>,
     query: Query<(&ChildOf)>,
     parents_query: Query<(Entity, &Children), Changed<Children>>,
 ) {
     let child = trigger.target();
     let parent = query.get(trigger.target()).unwrap().parent();
-    
+
     let child_element = add_or_get_element(child, None);
 
     let _child_id = child.to_bits().to_string();
@@ -856,7 +902,7 @@ pub fn update_heirarchy(//mut ev_hierarchy: EventReader<HierarchyEvent>,
     //if let Some(child) = result {
     //let child = result.unwrap();
     let parent_element = add_or_get_element(parent, None);
-    let _  = parent_element.append_child(&child_element);
+    let _ = parent_element.append_child(&child_element);
     /*
     for (parent_entity, children) in &parents_query {
         for child in children.iter() {
@@ -877,14 +923,23 @@ pub fn update_heirarchy(//mut ev_hierarchy: EventReader<HierarchyEvent>,
 }
 
 pub fn is_extension() -> bool {
-    let url = web_sys::window()
-    .unwrap()
-    .document()
-    .unwrap()
-    .url()
-    .expect("Could not get window URL!");
+    get_url().starts_with("chrome-extension://")
+}
 
-    url.starts_with("chrome-extension://")
+pub fn is_localhost() -> bool {
+    let url = get_url();
+    url.starts_with("http://localhost") || url.starts_with("https://localhost")
+}
+
+fn get_url() -> String {
+    let url = web_sys::window()
+        .unwrap()
+        .document()
+        .unwrap()
+        .url()
+        .expect("Could not get window URL!");
+
+    url
 }
 
 pub async fn import_font(font_name: String, font_path: String) {
@@ -898,7 +953,7 @@ pub async fn import_font(font_name: String, font_path: String) {
 }
 
 pub fn write_event(key: &str, value: String) {
-    let _  = get_root_element().unwrap().set_attribute(key, &value);
+    let _ = get_root_element().unwrap().set_attribute(key, &value);
 }
 
 pub fn read_event(key: &str) -> Option<String> {
@@ -906,7 +961,7 @@ pub fn read_event(key: &str) -> Option<String> {
 }
 
 pub fn clear_event(key: &str) {
-    let _  = get_root_element().unwrap().remove_attribute(key);
+    let _ = get_root_element().unwrap().remove_attribute(key);
 }
 
 pub fn get_root_element() -> Option<Element> {
@@ -949,15 +1004,15 @@ pub fn insert_style(element: &Element, mut target_style_dictionary: HashMap<Stri
     element.set_attribute("style", &styleString);
 }
 
-pub fn create_element(element_type: Option<String>) -> Element {
+pub fn create_element(tag_name: Option<String>) -> Element {
     let document = get_document();
     let _body = document.body().expect("document should have a body");
 
     let _element_type: String;
-    if element_type.is_none() {
+    if tag_name.is_none() {
         _element_type = "div".to_string();
     } else {
-        _element_type = element_type.unwrap();
+        _element_type = tag_name.unwrap();
     }
 
     let element = document.create_element(&_element_type).unwrap();
@@ -967,90 +1022,157 @@ pub fn create_element(element_type: Option<String>) -> Element {
     element
 }
 
-pub fn add_or_get_element(entity: Entity, element_type: Option<String>) -> Element {
+pub fn add_or_get_element(entity: Entity, tag_name: Option<String>) -> Element {
     let document = get_document();
+
     let _body = document.body().expect("document should have a body");
 
-    let element = get_element(entity);
+    let mut element = if let Some(element) = get_element(entity) {
+        if let Some(tag_name) = &tag_name {
+            if element.tag_name().to_lowercase() != tag_name.to_string() {
+                debug!(
+                    "Changing element tag from {} to {}",
+                    element.tag_name(),
+                    tag_name
+                );
+
+                Some(change_element_tag(entity, tag_name).expect("Failed to transform tag"))
+            } else {
+                Some(element)
+            }
+        } else {
+            Some(element)
+        }
+    } else {
+        None
+    };
 
     if element.is_none() {
         //if (!control_tracker.is_added()) {
         //    console::info!(format!("CHANGED PROBLEM!"));
         //}
-
-        let element = create_element(element_type);
-
-        let silk_id = entity.to_bits().to_string();
-        let _  = element.set_attribute(BEVY_NATIVE_ID_ATTRIBUTE, &silk_id.clone());
-
-        let e = element.clone();
-        let f = Closure::wrap(Box::new(move |ev: js_sys::Array| {
-            let entry = web_sys::ResizeObserverEntry::from(ev.get(0));
-            let width = entry.content_rect().width();
-            let height = entry.content_rect().height();
-            //console::log!(width);
-            let _  = e.set_attribute("width_change", &width.to_string());
-            let _  = e.set_attribute("height_change", &height.to_string());
-        }) as Box<dyn FnMut(js_sys::Array)>);
-        let observer = web_sys::ResizeObserver::new(f.as_ref().unchecked_ref()).unwrap();
-        f.forget();
-        let e = element.clone();
-        observer.observe(&e);
-
-        let e = element.clone();
-        let f = Closure::wrap(Box::new(move || {
-            let _  = e.set_attribute("was_clicked", &true.to_string());
-        }) as Box<dyn FnMut()>);
-        let _  = element.add_event_listener_with_callback("click", f.as_ref().unchecked_ref());
-        f.forget();
-
-        let e = element.clone();
-        let f = Closure::wrap(Box::new(move || {
-            let _  = e.set_attribute("was_focused", &true.to_string());
-        }) as Box<dyn FnMut()>);
-        let _  = element.add_event_listener_with_callback("onfocusin", f.as_ref().unchecked_ref());
-        f.forget();
-
-        let e = element.clone();
-        let f = Closure::wrap(Box::new(move || {
-            let _  = e.set_attribute("was_unfocused", &true.to_string());
-        }) as Box<dyn FnMut()>);
-        let _  = element.add_event_listener_with_callback("onfocusout", f.as_ref().unchecked_ref());
-        f.forget();
-
-
-        let e = element.clone();
-        let s_id = silk_id.clone();
-        let f = Closure::wrap(Box::new(move || {
-            let e = e.clone();
-            let _  = e.set_attribute("was_mouse_over", &false.to_string());
-            if let Ok(e) = e.dyn_into::<HtmlDivElement>() {
-                let width = e.offset_width();
-                let height = e.offset_height();
-                //console::log!(format!("{s_id} MOUSE LEAVE: {width}, {height}"))
-            }
-        }) as Box<dyn FnMut()>);
-        let _  = element.add_event_listener_with_callback("mouseleave", f.as_ref().unchecked_ref());
-        f.forget();
-
-        let e = element.clone();
-        let s_id = silk_id.clone();
-        let f = Closure::wrap(Box::new(move || {
-            let e = e.clone();
-            let _  = e.set_attribute("was_mouse_over", &true.to_string());
-            if let Ok(e) = e.dyn_into::<HtmlDivElement>() {
-                let width = e.offset_width();
-                let height = e.offset_height();
-                //console::log!(format!("{s_id} MOUSE ENTER: {width}, {height}"))
-            }
-        }) as Box<dyn FnMut()>);
-        let _  = element.add_event_listener_with_callback("mouseenter", f.as_ref().unchecked_ref());
-        f.forget();
- 
-        element
+        create_element_with_callbacks(entity, tag_name)
     } else {
         element.unwrap()
     }
+}
+
+fn create_element_with_callbacks(entity: Entity, tag_name: Option<String>) -> Element {
+    let element = create_element(tag_name);
+
+    let silk_id = entity.to_bits().to_string();
+    let _ = element.set_attribute(BEVY_NATIVE_ID_ATTRIBUTE, &silk_id.clone());
+
+    let e = element.clone();
+    let f = Closure::wrap(Box::new(move |ev: js_sys::Array| {
+        let entry = web_sys::ResizeObserverEntry::from(ev.get(0));
+        let width = entry.content_rect().width();
+        let height = entry.content_rect().height();
+        //console::log!(width);
+        let _ = e.set_attribute("width_change", &width.to_string());
+        let _ = e.set_attribute("height_change", &height.to_string());
+    }) as Box<dyn FnMut(js_sys::Array)>);
+    let observer = web_sys::ResizeObserver::new(f.as_ref().unchecked_ref()).unwrap();
+    f.forget();
+    let e = element.clone();
+    observer.observe(&e);
+
+    let e = element.clone();
+    let f = Closure::wrap(Box::new(move || {
+        let _ = e.set_attribute("was_clicked", &true.to_string());
+    }) as Box<dyn FnMut()>);
+    let _ = element.add_event_listener_with_callback("click", f.as_ref().unchecked_ref());
+    f.forget();
+
+    let e = element.clone();
+    let f = Closure::wrap(Box::new(move || {
+        let _ = e.set_attribute("was_focused", &true.to_string());
+    }) as Box<dyn FnMut()>);
+    let _ = element.add_event_listener_with_callback("onfocusin", f.as_ref().unchecked_ref());
+    f.forget();
+
+    let e = element.clone();
+    let f = Closure::wrap(Box::new(move || {
+        let _ = e.set_attribute("was_unfocused", &true.to_string());
+    }) as Box<dyn FnMut()>);
+    let _ = element.add_event_listener_with_callback("onfocusout", f.as_ref().unchecked_ref());
+    f.forget();
+
+    let e = element.clone();
+    let s_id = silk_id.clone();
+    let f = Closure::wrap(Box::new(move || {
+        let e = e.clone();
+        let _ = e.set_attribute("was_mouse_over", &false.to_string());
+        if let Ok(e) = e.dyn_into::<HtmlDivElement>() {
+            let width = e.offset_width();
+            let height = e.offset_height();
+            //console::log!(format!("{s_id} MOUSE LEAVE: {width}, {height}"))
+        }
+    }) as Box<dyn FnMut()>);
+    let _ = element.add_event_listener_with_callback("mouseleave", f.as_ref().unchecked_ref());
+    f.forget();
+
+    let e = element.clone();
+    let s_id = silk_id.clone();
+    let f = Closure::wrap(Box::new(move || {
+        let e = e.clone();
+        let _ = e.set_attribute("was_mouse_over", &true.to_string());
+        if let Ok(e) = e.dyn_into::<HtmlDivElement>() {
+            let width = e.offset_width();
+            let height = e.offset_height();
+            //console::log!(format!("{s_id} MOUSE ENTER: {width}, {height}"))
+        }
+    }) as Box<dyn FnMut()>);
+    let _ = element.add_event_listener_with_callback("mouseenter", f.as_ref().unchecked_ref());
+    f.forget();
+
+    element
+}
+
+/// Transforms an element (by id or element ref) into a different tag type, preserving
+/// attributes, children, and inline styles. Mirrors the given JS function.
+pub fn change_element_tag(entity: Entity, tag_name: &str) -> Result<Element, JsValue> {
+    // Resolve `elem` from either an HtmlElement or an id string
+    let element: HtmlElement = get_element(entity)
+        .expect("Failed to find element to change tag")
+        .clone()
+        .dyn_into::<HtmlElement>()?;
+
+    // Guard: must still be an HtmlElement, with a parent
+    let parent = element
+        .parent_node()
+        .ok_or_else(|| js_sys::Error::new("element has no parent"))?;
+
+    let new_element: Element = create_element_with_callbacks(entity, Some(tag_name.to_string()));
+
+    // Copy attributes
+    let attrs = element.get_attribute_names();
+
+    for entry in element.get_attribute_names() {
+        let key = entry.as_string().unwrap();
+        let value = element.get_attribute(&key).unwrap();
+        new_element.set_attribute(&key, &value)?;
+    }
+
+    // Move all children (like the JS, always take first child until none left)
+    // Using Node methods because `append_child` works on Node.
+    let new_node_node: &web_sys::Node = new_element.as_ref();
+    let elem_node: &web_sys::Node = element.as_ref();
+    while let Some(child) = elem_node.first_child() {
+        new_node_node.append_child(&child)?;
+    }
+
+    // Copy inline style (cssText)
+    let css_text = element.style().css_text();
+    new_element
+        .dyn_ref::<HtmlElement>()
+        .ok_or_else(|| js_sys::Error::new("new_node is not an HtmlElement"))?
+        .style()
+        .set_css_text(&css_text);
+
+    // Replace in DOM
+    parent.replace_child(new_element.as_ref(), element.as_ref())?;
+    Ok(new_element)
 }
 
 pub fn get_element(entity: Entity) -> Option<Element> {
@@ -1059,7 +1181,9 @@ pub fn get_element(entity: Entity) -> Option<Element> {
 }
 
 pub fn get_element_from_str(id: String) -> Option<Element> {
-    get_document().query_selector(&format!(r#"[{BEVY_NATIVE_ID_ATTRIBUTE}="{id}"]"#)).unwrap()
+    get_document()
+        .query_selector(&format!(r#"[{BEVY_NATIVE_ID_ATTRIBUTE}="{id}"]"#))
+        .unwrap()
 }
 
 pub fn get_document() -> web_sys::Document {
@@ -1085,21 +1209,18 @@ pub fn remove_detection(mut removals: RemovedComponents<Control>) {
 
 pub fn on_show_detection(
     mut commands: Commands,
-    mut query: Query<(
-        Entity,
-        &mut Control,
-        &mut OnShow),
-        Changed<Control>>
+    mut query: Query<(Entity, &mut Control, &mut OnShow), Changed<Control>>,
 ) {
     for (entity, mut control, mut on_show) in query.iter_mut() {
-        if control.is_visible && !on_show.was_visible || !control.is_visible && on_show.was_visible {
+        if control.is_visible && !on_show.was_visible || !control.is_visible && on_show.was_visible
+        {
             on_show.was_visible = control.is_visible;
             if control.is_visible {
                 //log(format!("SHOWN: {}", entity.to_bits().to_string()));
                 //let c: &mut Commands<'_, '_> = &mut commands;
-                commands.entity(entity).insert(Shown{});
-                if let Some(system) = on_show.system.as_ref() {
-                    commands.run_system(system.clone());
+                commands.entity(entity).insert(Shown {});
+                if let Some(system) = on_show.func.as_ref() {
+                    system.call(&mut commands, entity);
                 }
             }
         }
@@ -1120,8 +1241,8 @@ pub fn event_detection(
         Option<&mut InteractState>,
         Option<&mut OnClick>,
         Option<&mut BButton>,
-        Option<&mut InputField>
-    )>
+        Option<&mut InputField>,
+    )>,
 ) {
     // Manufacture the element we're gonna append
     let document = get_document();
@@ -1129,11 +1250,12 @@ pub fn event_detection(
 
     for ev in ev_snap_scroll_y.read() {
         let element: Element = add_or_get_element(ev.0, None);
-        element.set_scroll_top(element.scroll_height());
+        element.set_scroll_top(element.scroll_height() as f64);
         //console::log!("SNAPPING SCROLL Y");
     }
 
-    for (entity, mut control, mut interact_state, on_click, button, input_field) in query.iter_mut() {
+    for (entity, mut control, mut interact_state, on_click, button, input_field) in query.iter_mut()
+    {
         let element = get_element(entity);
         if element.is_some() {
             let element = element.unwrap();
@@ -1167,7 +1289,7 @@ pub fn event_detection(
                     interact_state.is_focused = false;
                     commands.entity(entity).insert(BindableChanged {});
                 }
-/* 
+                /*
                 let was_clicked = element.get_attribute("was_clicked");
                 if was_clicked.is_some() {
                     console::info!(format!("{} clicked.", entity.to_bits().to_string()));
@@ -1181,7 +1303,11 @@ pub fn event_detection(
 
             if let Some(width) = element.get_attribute("width_change") {
                 control.width = width.parse().unwrap();
-                control.height = element.get_attribute("height_change").unwrap().parse().unwrap();
+                control.height = element
+                    .get_attribute("height_change")
+                    .unwrap()
+                    .parse()
+                    .unwrap();
                 let _ = element.remove_attribute("width_change");
                 let _ = element.remove_attribute("height_change");
             }
@@ -1213,13 +1339,12 @@ pub fn event_detection(
                 if was_clicked.is_some() {
                     let _ = element.remove_attribute("was_clicked");
 
-                    commands.run_system(on_click.system);
-              
+                    on_click.func.call(&mut commands, entity);
+
                     //.call(&mut commands);
                     ev_click.send(ClickEvent(entity));
                 }
-            }
-            else if let Some(button) = button.as_ref() {
+            } else if let Some(button) = button.as_ref() {
                 let was_clicked = element.get_attribute("was_clicked");
                 if was_clicked.is_some() {
                     //console::info!(format!("{} clicked.", entity.to_bits().to_string()));
