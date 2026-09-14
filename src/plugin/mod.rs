@@ -16,13 +16,10 @@ use bevy_trait_query::RegisterExt;
 pub mod plugin;
 pub use plugin::*;
 
-use bevy::{prelude::*};
+pub mod commands;
+pub use commands::*;
 
-#[derive(Default, Event)]
-pub struct RouteChange {
-    pub path: Vec<String>,
-    pub params: HashMap<String, String>//HashMap<String, Box<dyn Reflect>>
-}
+use bevy::{prelude::*};
 
 /*
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -31,6 +28,12 @@ pub struct CustomMessage {
     pub msg: String,
 }
 */
+
+#[derive(Default, Event, Clone)]
+pub struct RouteChange {
+    pub path: Vec<String>,
+    pub params: HashMap<String, String>
+}
 
 #[derive(Debug, Clone, Component)]
 pub struct Binding {

@@ -20,6 +20,7 @@ use web_sys::{Document, Element, HtmlElement, HtmlIFrameElement, HtmlInputElemen
 use lazy_static::lazy_static;
 
 use base64::{Engine as _, engine::general_purpose};
+use std::collections::HashMap;
 use std::sync::Mutex;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
@@ -28,9 +29,13 @@ use web_sys::HtmlDivElement;
 use common::prelude::*;
 use web_sys::js_sys::{self, Array, Reflect};
 
-//use bevy_cobweb::prelude::*;
+use regex::Regex;
+use wasm_bindgen::prelude::*;
+use web_sys::window;
 
-use crate::*;
+use crate::RouteChange;
+
+//use bevy_cobweb::prelude::*;
 
 lazy_static! {
     pub static ref ROUTE_CHANNEL: Mutex<(Sender<RouteChange>, Receiver<RouteChange>)> = {
@@ -38,10 +43,6 @@ lazy_static! {
         Mutex::new((tx, rx))
     };
 }
-
-use regex::Regex;
-use wasm_bindgen::prelude::*;
-use web_sys::window;
 
 // To search in web app: //*[@bevy-native-id='4294967567']
 const BEVY_NATIVE_ID_ATTRIBUTE: &str = "bevy-native-id";
@@ -62,7 +63,7 @@ pub fn setup() {
     let location = window.location();
 
     let closure = Closure::wrap(Box::new(move || {
-        route();
+        send_route_change();
     }) as Box<dyn FnMut()>);
 
     window
@@ -70,7 +71,7 @@ pub fn setup() {
         .unwrap();
     closure.forget();
 
-    route();
+    send_route_change();
 }
 
 pub fn create_iframe_element() -> Result<(), JsValue> {

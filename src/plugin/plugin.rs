@@ -39,6 +39,7 @@ impl Plugin for BevyNative {
             .add_event::<ClickEvent>()
             .add_event::<SubmitEvent>()
             .add_event::<SnapScrollY>()
+            .init_resource::<RouteState>()
             .configure_sets(
                 PreUpdate,
                 (UISets::RenderUI.after(SimpleSubsecondSystemSet::UpdateFunctionPtrs),),
