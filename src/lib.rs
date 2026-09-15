@@ -1,6 +1,8 @@
 #![allow(warnings)]
 #![allow(unused)]
 
+mod layout;
+
 mod platforms;
 use std::collections::HashMap;
 

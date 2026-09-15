@@ -136,7 +136,6 @@ pub fn list_change_detection(
         {
             if vlist.is_some() {
                 let vlist = vlist.unwrap();
-                style_dictionary.insert("display".to_string(), "flex".to_string());
                 style_dictionary.insert("flex-direction".to_string(), "column".to_string());
                 match vlist.anchor {
                     Anchor::UpperLeft => {
@@ -193,7 +192,6 @@ pub fn list_change_detection(
 
             if hlist.is_some() {
                 let hlist = hlist.unwrap();
-                style_dictionary.insert("display".to_string(), "flex".to_string());
                 style_dictionary.insert("flex-direction".to_string(), "row".to_string());
                 match hlist.anchor {
                     Anchor::UpperLeft => {
@@ -266,9 +264,7 @@ pub fn list_change_detection(
                 style_dictionary.insert("background".to_string(), "none".to_string());
             }
 
-            if !control.is_visible {
-                style_dictionary.insert("display".to_string(), "none".to_string());
-            }
+            // Display/visibility belongs to base_change_detection.
 
             let element = add_or_get_element(entity, None);
             insert_style(&element, style_dictionary);
@@ -292,6 +288,8 @@ pub fn base_change_detection(
         Option<Ref<Shadow>>,
         Option<Ref<Button>>,
         Option<Ref<Name>>,
+        Option<Ref<VList>>,
+        Option<Ref<HList>>,
     )>,
     parent_container_query: Query<(&Container, Option<&VList>, Option<&HList>)>,
 ) {
@@ -308,7 +306,9 @@ pub fn base_change_detection(
         input_field,
         shadow,
         button,
-        name
+        name,
+        own_vlist,
+        own_hlist,
     ) in &query
     {
         /*
@@ -326,6 +326,8 @@ pub fn base_change_detection(
             || input_field.as_ref().is_some_and(|x| x.is_changed())
             || background_color.as_ref().is_some_and(|x| x.is_changed())
             || name.as_ref().is_some_and(|x| x.is_changed())
+            || own_vlist.as_ref().is_some_and(|x| x.is_changed())
+            || own_hlist.as_ref().is_some_and(|x| x.is_changed())
         {
             // Used for debugging
             /*
@@ -387,7 +389,6 @@ pub fn base_change_detection(
                 style_dictionary.insert("backdrop-filter".to_string(), "blur(5px)".to_string());
             }
 
-            style_dictionary.insert("display".to_string(), "grid".to_string());
             style_dictionary.insert("background".to_string(), "none".to_string());
             if control.is_overflow {
                 style_dictionary.insert("overflow".to_string(), "unset".to_string());
@@ -694,7 +695,6 @@ pub fn base_change_detection(
                     }
                 }
 
-                style_dictionary.insert("display".to_string(), "block".to_string());
                 style_dictionary.insert("text-align".to_string(), alignment);
 
                 use_pointer = true;
@@ -795,9 +795,13 @@ pub fn base_change_detection(
                 //);
             }
 
-            if !control.is_visible {
-                style_dictionary.insert("display".to_string(), "none".to_string());
-            }
+            // A base-only refresh must not overwrite a list's flex formatting.
+            crate::layout::apply_display(
+                &mut style_dictionary,
+                control.is_visible,
+                own_vlist.is_some() || own_hlist.is_some(),
+                BLabel.is_some(),
+            );
 
             if use_pointer {
                 style_dictionary.insert("pointer-events".to_string(), "all".to_string());
@@ -846,6 +850,14 @@ pub fn base_change_detection(
 
             if BLabel.is_some() {
                 element.set_inner_html(&text_content);
+            }
+
+            if let (Some(field), Ok(input)) = (input_field.as_ref(), element.clone().dyn_into::<HtmlInputElement>()) {
+                input.set_read_only(field.read_only);
+                // Preserve pending browser input until event_detection consumes it.
+                if element.get_attribute("was_input").is_none() && input.value() != field.text {
+                    input.set_value(&field.text);
+                }
             }
 
             //if let Ok(input_element) = element.clone().dyn_into::<HtmlInputElement>() {
@@ -1303,12 +1315,12 @@ pub fn event_detection(
             }
 
             if let Some(width) = element.get_attribute("width_change") {
-                control.width = width.parse().unwrap();
-                control.height = element
-                    .get_attribute("height_change")
-                    .unwrap()
-                    .parse()
-                    .unwrap();
+                let width = width.parse().unwrap();
+                let height = element.get_attribute("height_change").unwrap().parse().unwrap();
+                // Measurements are feedback, not layout requests. Equal observations
+                // must not repeatedly mark Control changed and schedule new renders.
+                if control.width != width { control.width = width; }
+                if control.height != height { control.height = height; }
                 let _ = element.remove_attribute("width_change");
                 let _ = element.remove_attribute("height_change");
             }
@@ -1320,14 +1332,18 @@ pub fn event_detection(
                     let _ = element.remove_attribute("was_input");
 
                     let input_element: HtmlInputElement = element.clone().dyn_into().unwrap();
-                    input_field.text = input_element.value();
-                    log(input_field.text.clone());
+                    if !input_field.read_only {
+                        input_field.text = input_element.value();
+                    } else {
+                        input_element.set_value(&input_field.text);
+                    }
                 }
 
                 let was_submitted = element.get_attribute("was_submitted");
                 if was_submitted.is_some() {
                     let _ = element.remove_attribute("was_submitted");
                     //console::info!(format!("{} submitted.", entity.to_bits().to_string()));
+                    if input_field.read_only { continue; }
                     ev_submit.send(SubmitEvent(entity));
                     if let Some(on_submitted) = input_field.on_submitted.as_ref() {
                         commands.run_system(*on_submitted);

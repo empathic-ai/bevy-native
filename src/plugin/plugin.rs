@@ -45,7 +45,7 @@ impl Plugin for BevyNative {
                 (UISets::RenderUI.after(SimpleSubsecondSystemSet::UpdateFunctionPtrs),),
             )
             .add_systems(PreUpdate, render_ui().in_set(UISets::RenderUI))
-            .add_systems(Update, render_ui())
+            .add_systems(Update, render_ui().before(EditBindingSet))
             .add_systems(
                 PostUpdate,
                 (
