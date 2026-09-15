@@ -58,7 +58,12 @@ impl Plugin for BevyNative {
                     //process_responsive_elements,
                     remove_detection,
                 )
-                    .chain(),
+                    .chain()
+                    // Publish bound visibility and reconciled rows to the DOM in
+                    // this frame, after Flux has applied their deferred commands.
+                    .after(BindingGraphSet)
+                    .after(process_reactive_lists)
+                    .after(process_reactive_maps),
             )
             .add_observer(update_heirarchy)
             //.add_systems(PostStartup, route_detection)
