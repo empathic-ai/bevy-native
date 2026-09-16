@@ -225,7 +225,7 @@ pub fn update_route(
 
     if let Ok((_, mut router, children)) = query.get_single_mut() {
 
-        if is_router_state_changed || router.is_added() {
+        if is_router_state_changed || router.is_added() || children.is_changed() {
 
             info!("Updating router to route: {:?}", route_state.to_string());    
 
@@ -239,6 +239,7 @@ pub fn update_route(
 
                 let is_match = route_name.is_some_and(|name| name == route.name);
                 control.is_visible = is_match;
+                commands.entity(child_entity).insert(RouteVisibilityResolved);
                 if is_match {
                     matched_entity = Some(child_entity);
                 }
@@ -250,6 +251,8 @@ pub fn update_route(
 
                     info!("Sending show view event for route: {:?}", route_state.to_string());
 
+                    // Apply child construction before the first route event.
+                    commands.queue(mount_visible_views);
                     commands.trigger_targets(
                         ShowView {
                             params: route_state.params.clone(),

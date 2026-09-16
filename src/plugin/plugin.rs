@@ -63,7 +63,8 @@ impl Plugin for BevyNative {
                     // this frame, after Flux has applied their deferred commands.
                     .after(BindingGraphSet)
                     .after(process_reactive_lists)
-                    .after(process_reactive_maps),
+                    .after(process_reactive_maps)
+                    .after(LazyViewSet),
             )
             .add_observer(update_heirarchy)
             //.add_systems(PostStartup, route_detection)
@@ -76,6 +77,7 @@ pub fn render_ui()
     (
         update_route,
         route_detection,
+        mount_visible_views,
         on_show_detection,
         base_change_detection,
         list_change_detection,
