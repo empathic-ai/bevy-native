@@ -16,13 +16,13 @@ impl NativeCommands<'_, '_> {
 
 }
 
-pub trait NetworkCommandsExt {
+pub trait NativeCommandsExt {
     fn set_route_with_id(&mut self, route: String, id: Id);
     fn set_route(&mut self, route: String, params: HashMap<String, String>);
 }
 
 // implement our trait for Bevy's `Commands`
-impl<'w, 's> NetworkCommandsExt for Commands<'w, 's> {
+impl<'w, 's> NativeCommandsExt for Commands<'w, 's> {
     fn set_route_with_id(&mut self, route: String, id: Id) {
         let mut params = HashMap::new();
         params.insert("id".to_string(), id.to_string());
