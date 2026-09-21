@@ -37,7 +37,7 @@ impl RouteState {
     }
 }
 
-fn to_url_params(params: &HashMap<String, String>) -> String {
+pub(crate) fn to_url_params(params: &HashMap<String, String>) -> String {
     let mut url_params = String::new();
 
     for (key, value) in params {
