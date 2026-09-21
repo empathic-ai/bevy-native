@@ -21,13 +21,34 @@ pub use commands::*;
 
 use bevy::{prelude::*};
 
-/*
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct CustomMessage {
-    pub id: Uuid,
-    pub msg: String,
+#[derive(Resource, Default)]
+pub struct RouteState {
+    pub path: Vec<String>,
+    pub params: HashMap<String, String>,
 }
-*/
+
+impl RouteState {
+    pub fn to_string(&self) -> String {
+        let mut route = self.path.join("/");
+        if self.params.len() > 0 {
+            route = route + "?" + &to_url_params(&self.params);
+        }
+        return route;
+    }
+}
+
+fn to_url_params(params: &HashMap<String, String>) -> String {
+    let mut url_params = String::new();
+
+    for (key, value) in params {
+        if !url_params.is_empty() {
+            url_params.push('&');
+        }
+        url_params.push_str(&format!("{}={}", key, value));
+    }
+
+    url_params
+}
 
 #[derive(Default, Event, Clone)]
 pub struct RouteChange {

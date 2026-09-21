@@ -292,6 +292,7 @@ pub fn base_change_detection(
         Option<Ref<HList>>,
     )>,
     parent_container_query: Query<(&Container, Option<&VList>, Option<&HList>)>,
+    cutout_overlay_query: Query<Entity, With<CutoutOverlay>>,
 ) {
     for (
         entity,
@@ -793,6 +794,15 @@ pub fn base_change_detection(
                 //    "filter".to_string(),
                 //    "drop-shadow(0px 1px 6px #444)".to_string(),
                 //);
+            }
+
+            if cutout_overlay_query.get(entity).is_ok() {
+                style_dictionary.insert("background".to_string(), "transparent".to_string());
+                style_dictionary.insert("overflow".to_string(), "visible".to_string());
+                style_dictionary.insert(
+                    "box-shadow".to_string(),
+                    "0 0 0 100vmax #FFFFFF".to_string(),
+                );
             }
 
             // A base-only refresh must not overwrite a list's flex formatting.

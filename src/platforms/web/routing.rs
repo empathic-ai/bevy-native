@@ -15,22 +15,6 @@ use web_sys::*;
 
 use crate::{ROUTE_CHANNEL, RouteChange};
 
-#[derive(Resource, Default)]
-pub struct RouteState {
-    pub path: Vec<String>,
-    pub params: HashMap<String, String>,
-}
-
-impl RouteState {
-    pub fn to_string(&self) -> String {
-        let mut route = self.path.join("/");
-        if self.params.len() > 0 {
-            route = route + "?" + &to_url_params(&self.params);
-        }
-        return route;
-    }
-}
-
 pub fn route_detection(
     mut commands: Commands,
     mut route_state: ResMut<RouteState>,
@@ -99,19 +83,6 @@ pub fn get_native_route_params() -> HashMap<String, String> {
     let params = convert_to_dictionary(params);
 
     return params;
-}
-
-fn to_url_params(params: &HashMap<String, String>) -> String {
-    let mut url_params = String::new();
-
-    for (key, value) in params {
-        if !url_params.is_empty() {
-            url_params.push('&');
-        }
-        url_params.push_str(&format!("{}={}", key, value));
-    }
-
-    url_params
 }
 
 pub fn convert_to_dictionary(search_params: UrlSearchParams) ->  HashMap<String, String> {
