@@ -11,10 +11,7 @@ pub struct NativeCommands<'w, 's> {
     route_ev: EventWriter<'w, RouteChange>,
 }
 
-impl NativeCommands<'_, '_> {
-
-
-}
+impl NativeCommands<'_, '_> {}
 
 pub trait NativeCommandsExt {
     fn set_route_with_id(&mut self, route: String, id: Id);
@@ -32,7 +29,7 @@ impl<'w, 's> NativeCommandsExt for Commands<'w, 's> {
     fn set_route(&mut self, route: String, params: HashMap<String, String>) {
         self.send_event(RouteChange {
             path: vec![route],
-            params: params
+            params: params,
         });
     }
 }

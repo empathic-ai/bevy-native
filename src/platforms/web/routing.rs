@@ -1,4 +1,4 @@
-use bevy::reflect::{List, DynamicList, DynamicStruct};
+use bevy::reflect::{DynamicList, DynamicStruct, List};
 use flux::prelude::*;
 
 use std::collections::HashMap;
@@ -9,7 +9,7 @@ use bevy::prelude::*;
 use bevy::ecs::event::{Event, EventWriter};
 
 use common::prelude::*;
-use wasm_bindgen::{prelude::*, JsCast};
+use wasm_bindgen::{JsCast, prelude::*};
 
 use web_sys::*;
 
@@ -18,17 +18,16 @@ use crate::{ROUTE_CHANNEL, RouteChange, RouteState, to_url_params};
 pub fn route_detection(
     mut commands: Commands,
     mut route_state: ResMut<RouteState>,
-    query: Query<(
-        Entity,
-        &Router,
-        &Children,
-    )>,
-    mut route_query: Query<(
-        Entity,
-        &mut Control,
-        &Route,
-        Option<&mut AutoBindableProperty>
-    ), Without<Router>>
+    query: Query<(Entity, &Router, &Children)>,
+    mut route_query: Query<
+        (
+            Entity,
+            &mut Control,
+            &Route,
+            Option<&mut AutoBindableProperty>,
+        ),
+        Without<Router>,
+    >,
 ) {
     /*
     for (entity, router, children) in &query {
@@ -85,14 +84,24 @@ pub fn get_native_route_params() -> HashMap<String, String> {
     return params;
 }
 
-pub fn convert_to_dictionary(search_params: UrlSearchParams) ->  HashMap<String, String> {
+pub fn convert_to_dictionary(search_params: UrlSearchParams) -> HashMap<String, String> {
     let mut dictionary: HashMap<String, String> = HashMap::new();
 
     let iterator = js_sys::try_iter(&search_params).unwrap().unwrap();
     for x in iterator {
         let item = x.unwrap();
-        let key = unsafe { js_sys::Reflect::get(&item, &JsValue::from_str("0")).unwrap().as_string().unwrap() };
-        let value = unsafe { js_sys::Reflect::get(&item, &JsValue::from_str("1")).unwrap().as_string().unwrap() };
+        let key = unsafe {
+            js_sys::Reflect::get(&item, &JsValue::from_str("0"))
+                .unwrap()
+                .as_string()
+                .unwrap()
+        };
+        let value = unsafe {
+            js_sys::Reflect::get(&item, &JsValue::from_str("1"))
+                .unwrap()
+                .as_string()
+                .unwrap()
+        };
         dictionary.insert(key, value);
     }
 
@@ -114,7 +123,11 @@ pub fn update_native_route_history(mut path: &str) {
     if path == "".to_string() {
         path = "/".to_string();
     }
-    window.history().unwrap().push_state_with_url(&JsValue::from_str(""), "", Some(&path)).unwrap();
+    window
+        .history()
+        .unwrap()
+        .push_state_with_url(&JsValue::from_str(""), "", Some(&path))
+        .unwrap();
 
     //route();
     //window. .pushState('page2', 'Title', '/page2.php');
@@ -150,18 +163,19 @@ pub fn update_route(
     mut query: bevy::prelude::Query<(Entity, Ref<Router>, Ref<Children>)>,
     mut evs: ResMut<Events<RouteChange>>,
     mut route_state: ResMut<RouteState>,
-    mut route_query: Query<(
-        Entity,
-        &mut Control,
-        &Route,
-        Option<&mut AutoBindableProperty>
-    ), Without<Router>>
+    mut route_query: Query<
+        (
+            Entity,
+            &mut Control,
+            &Route,
+            Option<&mut AutoBindableProperty>,
+        ),
+        Without<Router>,
+    >,
 ) {
-
     let route_change_ev = if let Some(route_change_ev) = evs.get_cursor().read(&evs).last() {
         Some(route_change_ev.clone())
-    }
-    else {
+    } else {
         let mut route_change_ev = None;
         {
             let (_, rx) = &mut *ROUTE_CHANNEL.lock().unwrap();
@@ -175,7 +189,6 @@ pub fn update_route(
     let mut is_router_state_changed = false;
 
     if let Some(route_change_ev) = route_change_ev {
-
         route_state.path = route_change_ev.path.clone();
         route_state.params = route_change_ev.params.clone();
 
@@ -185,20 +198,20 @@ pub fn update_route(
         let route_params = to_url_params(&route_state.params);
 
         // Update the browser's URL if it doesn't match the current route and params
-        if get_native_route_path().trim_start_matches('/') != route_path || to_url_params(&get_native_route_params()) != route_params {
+        if get_native_route_path().trim_start_matches('/') != route_path
+            || to_url_params(&get_native_route_params()) != route_params
+        {
             if route_state.params.len() > 0 {
                 route_path = route_path + "?" + &route_params;
             }
-    
+
             update_native_route_history(&route_path);
         }
     }
 
     if let Ok((_, mut router, children)) = query.get_single_mut() {
-
         if is_router_state_changed || router.is_added() || children.is_changed() {
-
-            info!("Updating router to route: {:?}", route_state.to_string());    
+            info!("Updating router to route: {:?}", route_state.to_string());
 
             let route_name = route_state.path.first().map(String::as_str);
             let mut matched_entity = None;
@@ -210,7 +223,9 @@ pub fn update_route(
 
                 let is_match = route_name.is_some_and(|name| name == route.name);
                 control.is_visible = is_match;
-                commands.entity(child_entity).insert(RouteVisibilityResolved);
+                commands
+                    .entity(child_entity)
+                    .insert(RouteVisibilityResolved);
                 if is_match {
                     matched_entity = Some(child_entity);
                 }
@@ -220,16 +235,19 @@ pub fn update_route(
                 //if route_state.matched_generation != route_state.generation {
                 //    route_state.matched_generation = route_state.generation;
 
-                    info!("Sending show view event for route: {:?}", route_state.to_string());
+                info!(
+                    "Sending show view event for route: {:?}",
+                    route_state.to_string()
+                );
 
-                    // Apply child construction before the first route event.
-                    commands.queue(mount_visible_views);
-                    commands.trigger_targets(
-                        ShowView {
-                            params: route_state.params.clone(),
-                        },
-                        matched_entity,
-                    );
+                // Apply child construction before the first route event.
+                commands.queue(mount_visible_views);
+                commands.trigger_targets(
+                    ShowView {
+                        params: route_state.params.clone(),
+                    },
+                    matched_entity,
+                );
                 //}
             }
         }
@@ -249,11 +267,11 @@ pub fn send_route_change() {
 
     let path_list = split_path_to_list(&route.trim_start_matches('/').trim_end_matches('/'));
 
-    tx.send(RouteChange{
+    tx.send(RouteChange {
         path: path_list,
-        params: get_native_route_params()
+        params: get_native_route_params(),
     });
-    /* 
+    /*
     let window = web_sys::window().expect("no global `window` exists");
     let location = window.location();
     let path = location.pathname().unwrap();
@@ -269,7 +287,5 @@ pub fn send_route_change() {
 }
 
 fn split_path_to_list(path: &str) -> Vec<String> {
-    path.split('/')
-        .map(|s| s.to_string())
-        .collect()
+    path.split('/').map(|s| s.to_string()).collect()
 }

@@ -18,7 +18,6 @@ pub enum UISets {
 
 impl Plugin for BevyNative {
     fn build(&self, app: &mut App) {
-
         #[cfg(feature = "native_ui")]
         #[cfg(target_arch = "wasm32")]
         app.register_component_as::<dyn BindableList, AutoBindableList>()

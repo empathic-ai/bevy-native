@@ -1,7 +1,7 @@
 use bevy::{
     ecs::{archetype::Archetypes, component::ComponentId},
-    prelude::{Changed, Component, Entity, Query, Resource, World, Event},
-    reflect::{TypeRegistry, reflect_trait, Reflect}
+    prelude::{Changed, Component, Entity, Event, Query, Resource, World},
+    reflect::{Reflect, TypeRegistry, reflect_trait},
 };
 
 use std::collections::HashMap;
@@ -19,7 +19,7 @@ pub use plugin::*;
 pub mod commands;
 pub use commands::*;
 
-use bevy::{prelude::*};
+use bevy::prelude::*;
 
 #[derive(Resource, Default)]
 pub struct RouteState {
@@ -53,7 +53,7 @@ pub(crate) fn to_url_params(params: &HashMap<String, String>) -> String {
 #[derive(Default, Event, Clone)]
 pub struct RouteChange {
     pub path: Vec<String>,
-    pub params: HashMap<String, String>
+    pub params: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, Component)]

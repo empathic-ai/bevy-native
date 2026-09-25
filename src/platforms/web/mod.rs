@@ -862,7 +862,10 @@ pub fn base_change_detection(
                 element.set_inner_html(&text_content);
             }
 
-            if let (Some(field), Ok(input)) = (input_field.as_ref(), element.clone().dyn_into::<HtmlInputElement>()) {
+            if let (Some(field), Ok(input)) = (
+                input_field.as_ref(),
+                element.clone().dyn_into::<HtmlInputElement>(),
+            ) {
                 input.set_read_only(field.read_only);
                 // Preserve pending browser input until event_detection consumes it.
                 if element.get_attribute("was_input").is_none() && input.value() != field.text {
@@ -1326,11 +1329,19 @@ pub fn event_detection(
 
             if let Some(width) = element.get_attribute("width_change") {
                 let width = width.parse().unwrap();
-                let height = element.get_attribute("height_change").unwrap().parse().unwrap();
+                let height = element
+                    .get_attribute("height_change")
+                    .unwrap()
+                    .parse()
+                    .unwrap();
                 // Measurements are feedback, not layout requests. Equal observations
                 // must not repeatedly mark Control changed and schedule new renders.
-                if control.width != width { control.width = width; }
-                if control.height != height { control.height = height; }
+                if control.width != width {
+                    control.width = width;
+                }
+                if control.height != height {
+                    control.height = height;
+                }
                 let _ = element.remove_attribute("width_change");
                 let _ = element.remove_attribute("height_change");
             }
@@ -1353,7 +1364,9 @@ pub fn event_detection(
                 if was_submitted.is_some() {
                     let _ = element.remove_attribute("was_submitted");
                     //console::info!(format!("{} submitted.", entity.to_bits().to_string()));
-                    if input_field.read_only { continue; }
+                    if input_field.read_only {
+                        continue;
+                    }
                     ev_submit.send(SubmitEvent(entity));
                     if let Some(on_submitted) = input_field.on_submitted.as_ref() {
                         commands.run_system(*on_submitted);
