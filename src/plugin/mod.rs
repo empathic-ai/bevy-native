@@ -38,16 +38,42 @@ impl RouteState {
 }
 
 pub(crate) fn to_url_params(params: &HashMap<String, String>) -> String {
-    let mut url_params = String::new();
+    // Routing compares serialized queries, so map iteration must not change the URL.
+    let mut pairs: Vec<_> = params.iter().collect();
+    pairs.sort_unstable_by(|left, right| left.0.cmp(right.0));
+    url::form_urlencoded::Serializer::new(String::new())
+        .extend_pairs(pairs)
+        .finish()
+}
 
-    for (key, value) in params {
-        if !url_params.is_empty() {
-            url_params.push('&');
-        }
-        url_params.push_str(&format!("{}={}", key, value));
+#[cfg(test)]
+mod routing_tests {
+    use super::*;
+
+    #[test]
+    fn query_values_round_trip_without_becoming_extra_parameters() {
+        let params = HashMap::from([
+            ("search".to_owned(), "a&b=c + #?".to_owned()),
+            ("odd key&".to_owned(), "".to_owned()),
+        ]);
+        let encoded = to_url_params(&params);
+        let decoded: HashMap<String, String> =
+            url::form_urlencoded::parse(encoded.as_bytes()).into_owned().collect();
+        assert_eq!(decoded, params);
     }
 
-    url_params
+    #[test]
+    fn query_order_is_stable_and_empty_routes_stay_clean() {
+        let params = HashMap::from([
+            ("z".to_owned(), "last".to_owned()),
+            ("a".to_owned(), "first value".to_owned()),
+        ]);
+        assert_eq!(to_url_params(&params), "a=first+value&z=last");
+        assert_eq!(to_url_params(&HashMap::new()), "");
+        assert_eq!(RouteState { path: vec!["devices".into()], params }.to_string(),
+            "devices?a=first+value&z=last");
+        assert_eq!(RouteState::default().to_string(), "");
+    }
 }
 
 #[derive(Default, Event, Clone)]
